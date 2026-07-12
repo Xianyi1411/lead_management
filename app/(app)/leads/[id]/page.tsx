@@ -10,6 +10,7 @@ import StatusPill from "@/components/StatusPill";
 import StatusAdvance from "@/components/StatusAdvance";
 import WhatsAppPanel from "@/components/WhatsAppPanel";
 import DeleteLeadButton from "@/components/DeleteLeadButton";
+import EditLeadDialog from "@/components/EditLeadDialog";
 import AddNoteForm from "@/components/AddNoteForm";
 import { assignLead, addNote } from "../actions";
 
@@ -85,9 +86,20 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
           {/* key={status} remounts the pill on a status change so the flush pulse plays */}
           <StatusPill key={status} status={status} flush />
           {canEdit && (
-            <Link href={`/leads/${lead.id}/edit`} className="btn btn-ghost" style={{ marginLeft: "auto" }}>
-              Edit lead
-            </Link>
+            <div style={{ marginLeft: "auto" }}>
+              <EditLeadDialog
+                lead={{
+                  id: lead.id,
+                  name: lead.name,
+                  phone: lead.phone,
+                  email: lead.email,
+                  company: lead.company,
+                  source: lead.source,
+                  dealValue: lead.dealValue,
+                  notes: lead.notes,
+                }}
+              />
+            </div>
           )}
         </div>
 

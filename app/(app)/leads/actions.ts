@@ -94,9 +94,9 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
 // ---------------------------------------------------------------------------
 export async function updateLead(
   leadId: string,
-  _prev: ActionResult,
+  _prev: ActionResult & { ts?: number },
   formData: FormData
-): Promise<ActionResult> {
+): Promise<ActionResult & { ts?: number }> {
   const user = await getCurrentUser();
   if (!user) return { error: "Your session expired. Sign in again." };
 
@@ -131,7 +131,7 @@ export async function updateLead(
   });
 
   revalidateLead(leadId);
-  redirect(`/leads/${leadId}`);
+  return { ts: Date.now() }; // success marker — the edit dialog closes on it
 }
 
 // ---------------------------------------------------------------------------

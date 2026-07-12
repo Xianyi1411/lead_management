@@ -320,8 +320,9 @@ are primary buttons at the top right that open a **centered modal** with the for
 a deliberate exception to the modal-averse product default, executed on the native
 `<dialog>` element: true top-layer (no z-index hacks), backdrop dim + blur, Escape
 and backdrop-click close, entrance animation honouring reduced-motion. Dialogs close
-themselves on success (user create) or hand off to the new record's page (lead
-create). Edit flows remain full pages.
+themselves on success (user create, lead edit) or hand off to the new record's page
+(lead create). **Edit lead** uses the same dialog pattern, triggered by the ghost
+button in the detail title row.
 
 **Still to design when built** (not yet in the mockup): Users (Admin) table + create/
 deactivate, the New-lead form, the Sales-Rep-scoped dashboard, and the loading/empty/
