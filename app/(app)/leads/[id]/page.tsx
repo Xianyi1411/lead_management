@@ -12,6 +12,7 @@ import WhatsAppPanel from "@/components/WhatsAppPanel";
 import DeleteLeadButton from "@/components/DeleteLeadButton";
 import EditLeadDialog from "@/components/EditLeadDialog";
 import AddNoteForm from "@/components/AddNoteForm";
+import Dropdown from "@/components/Dropdown";
 import { assignLead, addNote } from "../actions";
 
 const ACTIVITY_COLOR: Record<ActivityType, string> = {
@@ -134,16 +135,14 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
               {canAssign && (
                 <form action={assignLead.bind(null, lead.id)} style={{ marginTop: 14 }}>
                   <div className="assign-row">
-                    <select name="userId" defaultValue={lead.assignedTo?.id ?? ""} aria-label="Assign to Sales Rep">
-                      <option value="" disabled>
-                        Assign to a Sales Rep…
-                      </option>
-                      {reps.map((r) => (
-                        <option key={r.id} value={r.id}>
-                          {r.name}
-                        </option>
-                      ))}
-                    </select>
+                    <Dropdown
+                      name="userId"
+                      compact
+                      placeholder="Assign to a Sales Rep…"
+                      ariaLabel="Assign to Sales Rep"
+                      defaultValue={lead.assignedTo?.id ?? ""}
+                      options={reps.map((r) => ({ value: r.id, label: r.name }))}
+                    />
                     <button type="submit" className="btn btn-ghost">
                       Assign
                     </button>

@@ -5,6 +5,7 @@ import { ROLES, ROLE_LABELS, type Role } from "@/lib/domain";
 import { relativeTime } from "@/lib/format";
 import Topbar from "@/components/Topbar";
 import AddUserDialog from "@/components/AddUserDialog";
+import Dropdown from "@/components/Dropdown";
 import { setUserRole, toggleUserActive } from "./actions";
 
 // Admin-only (Blueprint §3): create users, set roles, deactivate/reactivate.
@@ -58,15 +59,14 @@ export default async function UsersPage() {
                         ROLE_LABELS[u.role as Role]
                       ) : (
                         <form action={setUserRole.bind(null, u.id)} className="assign-row">
-                          <select name="role" defaultValue={u.role} aria-label={`Role for ${u.name}`}
-                            style={{ height: 32, fontSize: 12.5 }}>
-                            {ROLES.map((r) => (
-                              <option key={r} value={r}>
-                                {ROLE_LABELS[r]}
-                              </option>
-                            ))}
-                          </select>
-                          <button type="submit" className="step-btn reopen" style={{ height: 32 }}>
+                          <Dropdown
+                            name="role"
+                            compact
+                            ariaLabel={`Role for ${u.name}`}
+                            defaultValue={u.role}
+                            options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+                          />
+                          <button type="submit" className="step-btn reopen" style={{ height: 34 }}>
                             Set
                           </button>
                         </form>

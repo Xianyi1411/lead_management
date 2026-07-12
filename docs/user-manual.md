@@ -30,8 +30,9 @@ Use **Log out** at the top right of any page to end your session.
   The scope pill at the top right tells you what you're looking at: *System view*
   (Admin), *Team view* (Manager), or *My leads* (Sales Rep).
 - **Leads** — the list. Search by name, phone, or company from the top bar of any
-  page; narrow with the Status / Source / Rep dropdowns and **Apply filters**
-  (active filters light up purple; **Clear** resets). Click a Lead's name to open it.
+  page; narrow with the Status / Source / Rep dropdowns — picking an option applies
+  it immediately (active filters light up purple; **Clear** resets). Click a Lead's
+  name to open it.
 - **Lead page** — four panels: **Lead info**, **Advance status**, **Activity**
   (the timeline — also the audit trail), and **Contact via WhatsApp**.
 

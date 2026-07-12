@@ -4,6 +4,7 @@ import { useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { createLead, type ActionResult } from "@/app/(app)/leads/actions";
 import { LEAD_SOURCES, SOURCE_LABELS } from "@/lib/domain";
+import Dropdown from "./Dropdown";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -66,13 +67,12 @@ export default function AddLeadDialog() {
             </div>
             <div className="field">
               <label htmlFor="nl-source">Source</label>
-              <select id="nl-source" name="source" defaultValue="WEBSITE">
-                {LEAD_SOURCES.map((s) => (
-                  <option key={s} value={s}>
-                    {SOURCE_LABELS[s]}
-                  </option>
-                ))}
-              </select>
+              <Dropdown
+                id="nl-source"
+                name="source"
+                defaultValue="WEBSITE"
+                options={LEAD_SOURCES.map((s) => ({ value: s, label: SOURCE_LABELS[s] }))}
+              />
             </div>
             <div className="field">
               <label htmlFor="nl-dealValue">Deal value (RM)</label>

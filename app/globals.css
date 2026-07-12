@@ -365,9 +365,44 @@ textarea.wa-preview:focus { outline: none; border-color: var(--wa); box-shadow: 
 .note-row input:focus { outline: none; border-color: var(--iris); box-shadow: 0 0 0 3px var(--iris-ring); }
 
 .assign-row { display: flex; gap: 9px; align-items: center; }
+.assign-row .dd { flex: 1; min-width: 0; }
 .assign-row select { flex: 1; height: 36px; border: 1px solid var(--mist); border-radius: var(--r-sm); padding: 0 10px;
   font-size: 13.5px; font-family: var(--ui); background: var(--surface); }
 .assign-row select:focus { outline: none; border-color: var(--iris); box-shadow: 0 0 0 3px var(--iris-ring); }
+
+/* ============================================================================
+   Custom dropdown (components/Dropdown.tsx) — replaces native <select> app-wide
+   ========================================================================== */
+.dd { position: relative; display: inline-flex; }
+.dd.dd-block { display: flex; width: 100%; }
+.dd-btn { display: inline-flex; align-items: center; justify-content: space-between; gap: 8px;
+  border: 1px solid var(--mist); background: var(--surface); border-radius: var(--r-sm);
+  font-size: 13px; font-weight: 500; color: var(--ink); font-family: var(--ui);
+  padding: 0 10px 0 12px; cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, box-shadow 0.15s; }
+.dd-btn > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.dd-btn svg { width: 10px; height: 6px; color: var(--slate); flex-shrink: 0; transition: transform 0.18s ease; }
+.dd-btn[aria-expanded="true"] svg { transform: rotate(180deg); }
+.dd-btn:hover { border-color: #c3c8d4; }
+.dd-btn:focus-visible { outline: none; border-color: var(--iris); box-shadow: 0 0 0 3px var(--iris-ring); }
+.dd-filter { height: 34px; }
+.dd-field { height: 40px; width: 100%; font-size: 14px; }
+.dd-compact { height: 34px; font-size: 13px; }
+.dd-btn.on { border-color: var(--iris); background: var(--iris-soft); color: var(--iris); font-weight: 600; }
+.dd-btn.on svg { color: var(--iris); }
+.dd-ph { color: #9096a5; font-weight: 400; }
+
+@keyframes ddIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.dd-pop { position: fixed; z-index: 40; }
+.dd-menu { list-style: none; margin: 0; background: var(--surface); border: 1px solid var(--mist);
+  border-radius: var(--r); box-shadow: 0 12px 40px rgba(16, 18, 27, 0.16); padding: 5px;
+  max-height: 280px; overflow-y: auto; animation: ddIn 0.16s cubic-bezier(0.22, 1, 0.36, 1); }
+.dd-opt { display: flex; align-items: center; justify-content: space-between; gap: 10px;
+  padding: 7px 10px; border-radius: 6px; font-size: 13px; color: var(--ink); cursor: pointer; }
+.dd-opt.hi { background: var(--mist-2); }
+.dd-opt[aria-selected="true"] { color: var(--iris); font-weight: 600; }
+.dd-opt[aria-selected="true"].hi { background: var(--iris-soft); }
+.dd-opt .check { width: 14px; height: 14px; flex-shrink: 0; }
 
 /* ============================================================================
    Modal dialogs (create flows) — native <dialog>, centered, token-styled

@@ -172,13 +172,21 @@ screen. `:active` nudges 0.5px.
 **Inputs.** 36–40px, `--mist` border, Iris focus ring. Placeholder text at `--slate`
 (meets 4.5:1 — not a pale grey).
 
-**Filter bar.** Three distinct levels so component roles read at a glance:
-(1) selects are visibly dropdowns — custom chevron, ink text — and switch to an
-**iris border + iris-soft tint** when a filter is applied, so active filters are
-obvious; (2) the apply action is a **soft-iris secondary button** (`.btn-soft`) —
-above ghost, below the solid-iris primary; (3) the result count and Clear are quiet
+**Dropdown (custom, app-wide).** Native `<select>` is replaced everywhere by
+`components/Dropdown.tsx` so the *open menu* matches the design system, not just the
+closed control. Trigger: bordered chip/field with a rotating chevron; menu: white
+surface, 9px radius, soft shadow, hover-highlighted options, iris check on the
+selected one. The menu renders `position: fixed` so it's never clipped by
+overflow containers, tables, or dialogs, and closes on outside click / Escape /
+scroll. Keyboard: arrows move, Enter selects, Home/End jump — focus stays on the
+trigger. A hidden input carries the value into whatever form it sits in.
+
+**Filter bar.** Distinct levels so component roles read at a glance: (1) filter
+dropdowns show a context prefix ("Status: All"), light up **iris border +
+iris-soft tint** when applied, and **apply instantly on selection** (the dropdown
+submits its form — no Apply button); (2) the result count and Clear are quiet
 text-level elements that don't compete. Hierarchy: solid iris (primary action) →
-soft iris (bar action) → bordered white (inputs) → plain text (info).
+bordered white (inputs) → plain text (info).
 
 **Table.** Uppercase 11px column headers on a **`--mist-2` header band** — clearly a
 different colour from the data rows; 13.5px cells; `--mist-2` row dividers; even rows

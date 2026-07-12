@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { updateLead, type ActionResult } from "@/app/(app)/leads/actions";
 import { LEAD_SOURCES, SOURCE_LABELS } from "@/lib/domain";
+import Dropdown from "./Dropdown";
 
 type EditState = ActionResult & { ts?: number };
 
@@ -80,13 +81,12 @@ export default function EditLeadDialog({ lead }: { lead: EditableLead }) {
             </div>
             <div className="field">
               <label htmlFor="el-source">Source</label>
-              <select id="el-source" name="source" defaultValue={lead.source}>
-                {LEAD_SOURCES.map((s) => (
-                  <option key={s} value={s}>
-                    {SOURCE_LABELS[s]}
-                  </option>
-                ))}
-              </select>
+              <Dropdown
+                id="el-source"
+                name="source"
+                defaultValue={lead.source}
+                options={LEAD_SOURCES.map((s) => ({ value: s, label: SOURCE_LABELS[s] }))}
+              />
             </div>
             <div className="field">
               <label htmlFor="el-dealValue">Deal value (RM)</label>

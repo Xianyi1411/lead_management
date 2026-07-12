@@ -15,6 +15,7 @@ import { formatNumber, relativeTime } from "@/lib/format";
 import Topbar from "@/components/Topbar";
 import StatusPill from "@/components/StatusPill";
 import AddLeadDialog from "@/components/AddLeadDialog";
+import Dropdown from "@/components/Dropdown";
 
 const REP_COLORS = ["#0E9AA7", "#D98A0B", "#2F6FED", "#17915B", "#4A45E0"];
 function repColor(name: string) {
@@ -92,38 +93,51 @@ export default async function LeadsPage({ searchParams }: { searchParams: Filter
         action={<AddLeadDialog />}
       />
       <div className="content screen-in">
+        {/* Picking an option submits the form immediately (submitOnChange). */}
         <form className="filters" action="/leads" method="get">
           {q && <input type="hidden" name="q" value={q} />}
-          <select className={`filter${status ? " on" : ""}`} name="status" defaultValue={status ?? ""} aria-label="Filter by status">
-            <option value="">Status: All</option>
-            {LEAD_STATUSES.map((s) => (
-              <option key={s} value={s}>
-                {STATUS_LABELS[s]}
-              </option>
-            ))}
-          </select>
-          <select className={`filter${source ? " on" : ""}`} name="source" defaultValue={source ?? ""} aria-label="Filter by source">
-            <option value="">Source: All</option>
-            {LEAD_SOURCES.map((s) => (
-              <option key={s} value={s}>
-                {SOURCE_LABELS[s]}
-              </option>
-            ))}
-          </select>
+          <Dropdown
+            name="status"
+            variant="filter"
+            prefix="Status"
+            submitOnChange
+            active={!!status}
+            ariaLabel="Filter by status"
+            defaultValue={status ?? ""}
+            options={[
+              { value: "", label: "All" },
+              ...LEAD_STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] })),
+            ]}
+          />
+          <Dropdown
+            name="source"
+            variant="filter"
+            prefix="Source"
+            submitOnChange
+            active={!!source}
+            ariaLabel="Filter by source"
+            defaultValue={source ?? ""}
+            options={[
+              { value: "", label: "All" },
+              ...LEAD_SOURCES.map((s) => ({ value: s, label: SOURCE_LABELS[s] })),
+            ]}
+          />
           {reps.length > 0 && (
-            <select className={`filter${rep ? " on" : ""}`} name="rep" defaultValue={rep ?? ""} aria-label="Filter by assigned rep">
-              <option value="">Rep: All</option>
-              <option value="unassigned">Unassigned</option>
-              {reps.map((r) => (
-                <option key={r.id} value={r.id}>
-                  {r.name}
-                </option>
-              ))}
-            </select>
+            <Dropdown
+              name="rep"
+              variant="filter"
+              prefix="Rep"
+              submitOnChange
+              active={!!rep}
+              ariaLabel="Filter by assigned rep"
+              defaultValue={rep ?? ""}
+              options={[
+                { value: "", label: "All" },
+                { value: "unassigned", label: "Unassigned" },
+                ...reps.map((r) => ({ value: r.id, label: r.name })),
+              ]}
+            />
           )}
-          <button type="submit" className="btn btn-soft" style={{ height: 34 }}>
-            Apply filters
-          </button>
           {hasFilters && (
             <Link href="/leads" className="filter-clear">
               Clear

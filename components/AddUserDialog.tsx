@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { createUser, type UserActionResult } from "@/app/(app)/users/actions";
 import { ROLES, ROLE_LABELS } from "@/lib/domain";
+import Dropdown from "./Dropdown";
 
 function SubmitButton() {
   const { pending } = useFormStatus();
@@ -69,13 +70,12 @@ export default function AddUserDialog() {
             </div>
             <div className="field">
               <label htmlFor="nu-role">Role</label>
-              <select id="nu-role" name="role" defaultValue="SALES_REP">
-                {ROLES.map((r) => (
-                  <option key={r} value={r}>
-                    {ROLE_LABELS[r]}
-                  </option>
-                ))}
-              </select>
+              <Dropdown
+                id="nu-role"
+                name="role"
+                defaultValue="SALES_REP"
+                options={ROLES.map((r) => ({ value: r, label: ROLE_LABELS[r] }))}
+              />
             </div>
           </div>
 
