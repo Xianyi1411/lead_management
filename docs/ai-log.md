@@ -91,14 +91,32 @@ and what a human decided/verified.
   "quick answers" section that pre-empts the demo-day questions (why no Won button,
   why a Rep can't see a Lead, what WhatsApp logging does and doesn't prove).
 
-## 8 · Deploy prep (Vercel + Neon)
+## 8 · Deploy prep, deployment, and live fixes (Vercel + Neon)
 
-- **Prompt:** "do the deploy prep".
+- **Prompt:** "do the deploy prep", then live troubleshooting during the real deploy.
 - **Outcome:** dual-schema strategy — `schema.prisma` (SQLite) stays the offline demo
   fallback while a model-identical `schema.postgres.prisma` targets Neon; a
   `vercel-build` script generates the Postgres client, pushes the schema, and builds;
   `postinstall` gained a fallback so Vercel's install step doesn't trip on the dev
   schema; `db:prod:seed` for one-time production seeding. `docs/deploy.md` runbook
   covers Neon setup (direct vs pooled URL gotcha), Vercel env vars, seeding with a
-  wipe warning, demo-day fallback, and troubleshooting. Git repo initialized with the
-  full history-ready initial commit.
+  wipe warning, demo-day fallback, and troubleshooting. Git repo initialized and
+  pushed to GitHub. Post-deploy feedback ("clicking feels slow") was diagnosed as a
+  region mismatch — functions in US East, database in Singapore — fixed by pinning
+  Vercel to sin1; "edit lead didn't follow the pop-out frame" became the edit dialog;
+  a custom dropdown replaced every native select so open menus match the design
+  system; Next.js patched to 14.2.35.
+
+## 9 · Presentation deck
+
+- **Prompt:** "draft the presentation… clean… for non-coding people and leaders/CEO…
+  tell them how I implemented Claude Code, the important prompts and method, from
+  business-logic confirmation until frontend demo until the output."
+- **Outcome:** `presentation/Leadway-presentation.pptx` — 13 slides in the Leadway
+  design tokens (ink/fog/iris + the pipeline spectrum as the recurring motif), zero
+  code on slides. The spine is the five-move method (agree the language → see the
+  design first → lock rules into tests → steer in plain words → verify then ship),
+  each move carrying its real verbatim prompt as a styled quote card. Includes a
+  six-beat demo slide and full speaker notes with timings, demo script, and Q&A prep.
+  Generated with pptxgenjs (no Python on the machine), structurally QA'd by
+  unpacking the OOXML.
