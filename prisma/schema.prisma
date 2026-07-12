@@ -1,0 +1,67 @@
+// Authoritative source for the ERD (Blueprint §6). Keep BLUEPRINT.md in sync.
+//
+// Provider is SQLite for dev/demo resilience (file-based, offline). For production
+// (ADR-0001) switch provider to "postgresql" and point DATABASE_URL at Neon.
+// Status/Role/Source/Type are stored as String (not native DB enums) so the schema
+// is portable across SQLite and Postgres; validity is enforced in app code via the
+// TypeScript unions and the pure modules in lib/ (transitions, permissions).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("SALES_REP") // Role: ADMIN | MANAGER | SALES_REP
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  assignedLeads Lead[]     @relation("AssignedTo")
+  createdLeads  Lead[]     @relation("CreatedBy")
+  activities    Activity[]
+}
+
+model Lead {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  company      String?
+  source       String   @default("OTHER") // LeadSource
+  status       String   @default("NEW")   // LeadStatus
+  dealValue    Int      @default(0)        // RM, whole ringgit (SQLite has no Decimal; switch to Decimal when moving to Postgres)
+  notes        String?
+  assignedToId String?
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignedTo User?      @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User       @relation("CreatedBy", fields: [createdById], references: [id])
+  activities Activity[]
+
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  leadId    String
+  userId    String
+  type      String // ActivityType: WHATSAPP_CONTACT | STATUS_CHANGE | ASSIGNMENT | NOTE | CREATED
+  detail    String
+  createdAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+}

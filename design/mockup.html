@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lead Management — UI Mockup</title>
+<!-- Intended production faces: Inter (UI) + IBM Plex Mono (numerics). Mockup falls back to system stacks so it renders offline/self-contained. -->
+<style>
+  :root{
+    /* neutrals */
+    --fog:#F7F8FA; --surface:#FFFFFF; --rail:#171922; --rail-hi:#232634; --rail-line:#2b2f3d;
+    --ink:#1C1F27; --slate:#5B6170; --mist:#E6E8EE; --mist-2:#EEF0F4;
+    /* accent (interactive only) */
+    --iris:#4A45E0; --iris-soft:#ECEBFB; --iris-ring:rgba(74,69,224,.35);
+    /* whatsapp verb */
+    --wa:#1FA855; --wa-hi:#1c9a4e;
+    /* pipeline spectrum */
+    --new:#64748B;      --new-t:#EEF1F5;
+    --contacted:#2F6FED;--contacted-t:#E9F0FE;
+    --qualified:#0E9AA7;--qualified-t:#E2F4F5;
+    --proposal:#D98A0B; --proposal-t:#FBF0DC;
+    --won:#17915B;      --won-t:#E4F3EA;
+    --lost:#D2453E;     --lost-t:#FBE9E8;
+
+    --ui:'Inter',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;
+    --mono:'IBM Plex Mono',ui-monospace,'Cascadia Mono','SF Mono',Consolas,Menlo,monospace;
+    --r:9px; --r-sm:6px;
+    --shadow:0 1px 2px rgba(16,18,27,.04),0 4px 12px rgba(16,18,27,.05);
+    --z-topbar:20; --z-rail:30;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility}
+  body{font-family:var(--ui);background:var(--fog);color:var(--ink);font-size:14px;line-height:1.45}
+  .tnum{font-family:var(--mono);font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+  a{color:inherit;text-decoration:none}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+  :focus-visible{outline:2px solid var(--iris);outline-offset:2px;border-radius:4px}
+
+  /* ---------- shell ---------- */
+  .app{display:flex;min-height:100vh}
+  .rail{width:240px;flex-shrink:0;background:var(--rail);color:#cbd0dd;display:flex;flex-direction:column;
+        position:sticky;top:0;height:100vh;z-index:var(--z-rail)}
+  .brand{display:flex;align-items:center;gap:11px;padding:20px 20px 18px}
+  /* Logo mark: the funnel's happy path — five ascending bars, New → Won */
+  .mark{display:flex;gap:3px;align-items:flex-end;height:20px}
+  .mark i{width:4px;border-radius:99px;display:block}
+  .mark i:nth-child(1){height:7px;background:var(--new)}
+  .mark i:nth-child(2){height:10px;background:var(--contacted)}
+  .mark i:nth-child(3){height:13px;background:var(--qualified)}
+  .mark i:nth-child(4){height:16px;background:var(--proposal)}
+  .mark i:nth-child(5){height:20px;background:var(--won)}
+  .brand b{color:#fff;font-weight:600;font-size:15px;letter-spacing:-.01em}
+  .brand span{display:block;font-size:11px;color:#7b8194;font-weight:500;margin-top:1px}
+
+  nav.rail-nav{padding:8px 12px;display:flex;flex-direction:column;gap:2px}
+  .navitem{display:flex;align-items:center;gap:11px;padding:9px 12px;border-radius:var(--r-sm);
+           color:#aeb4c4;font-weight:500;font-size:13.5px;width:100%;text-align:left;transition:background .15s,color .15s}
+  .navitem svg{width:17px;height:17px;flex-shrink:0;stroke-width:1.9}
+  .navitem:hover{background:var(--rail-hi);color:#e7eaf1}
+  .navitem.active{background:var(--iris);color:#fff}
+  .navitem.locked{color:#5c6274;cursor:not-allowed}
+  .navitem.locked:hover{background:transparent;color:#5c6274}
+  .navitem .lock{margin-left:auto;width:13px;height:13px;opacity:.7}
+  .rail-scope{margin:14px 12px 0;padding:10px 12px;background:rgba(255,255,255,.03);border:1px solid var(--rail-line);
+              border-radius:var(--r-sm);font-size:11.5px;color:#8b91a4;line-height:1.4}
+  .rail-scope b{color:#c9cede;font-weight:600}
+  .rail-foot{margin-top:auto;padding:12px;border-top:1px solid var(--rail-line)}
+  .userchip{display:flex;align-items:center;gap:10px;padding:8px;border-radius:var(--r-sm);width:100%}
+  .userchip:hover{background:var(--rail-hi)}
+  .avatar{width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-size:11.5px;font-weight:600;
+          color:#fff;flex-shrink:0;letter-spacing:.02em}
+  .userchip .meta{text-align:left;line-height:1.25;min-width:0}
+  .userchip .meta b{display:block;font-size:13px;color:#fff;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .rolebadge{font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.04em;color:#9aa0b2}
+  .signout{margin-left:auto;color:#7b8194}
+  .signout svg{width:16px;height:16px}
+  .signout:hover{color:#fff}
+
+  .main{flex:1;min-width:0;display:flex;flex-direction:column}
+  .topbar{position:sticky;top:0;z-index:var(--z-topbar);background:rgba(247,248,250,.85);backdrop-filter:blur(8px);
+          border-bottom:1px solid var(--mist);display:flex;align-items:center;gap:16px;padding:0 26px;height:60px}
+  .page-title{font-size:20px;font-weight:600;letter-spacing:-.015em}
+  .search{flex:1;max-width:420px;position:relative}
+  .search svg{position:absolute;left:11px;top:50%;transform:translateY(-50%);width:15px;height:15px;color:var(--slate)}
+  .search input{width:100%;height:36px;border:1px solid var(--mist);background:var(--surface);border-radius:var(--r-sm);
+                padding:0 12px 0 34px;font-size:13.5px;color:var(--ink)}
+  .search input::placeholder{color:#9096a5}
+  .search input:focus{outline:none;border-color:var(--iris);box-shadow:0 0 0 3px var(--iris-ring)}
+  .spacer{flex:1}
+  .scope-pill{display:inline-flex;align-items:center;gap:7px;height:32px;padding:0 12px;background:var(--surface);
+              border:1px solid var(--mist);border-radius:99px;font-size:12.5px;font-weight:500;color:var(--slate)}
+  .scope-pill i{width:7px;height:7px;border-radius:50%;background:var(--iris)}
+  .btn{display:inline-flex;align-items:center;gap:7px;height:36px;padding:0 14px;border-radius:var(--r-sm);
+       font-size:13.5px;font-weight:600;transition:background .15s,box-shadow .18s,transform .12s cubic-bezier(.22,1,.36,1)}
+  .btn:hover{transform:translateY(-1px)}
+  .btn:active{transform:translateY(.5px)}
+  .btn-primary{background:var(--iris);color:#fff}
+  .btn-primary:hover{background:#3f3ad4;box-shadow:0 2px 8px var(--iris-ring)}
+  .btn svg{width:15px;height:15px;stroke-width:2.2}
+  .btn-ghost{background:var(--surface);border:1px solid var(--mist);color:var(--ink);font-weight:500}
+  .btn-ghost:hover{background:var(--mist-2)}
+  .btn-wa{background:var(--wa);color:#fff}
+  .btn-wa:hover{background:var(--wa-hi)}
+
+  .screen{padding:24px 26px 48px;display:none;max-width:1180px;width:100%}
+  .screen.active{display:block;animation:screenIn .34s cubic-bezier(.22,1,.36,1)}
+  @keyframes screenIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+  @keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+  @keyframes tlIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:none}}
+  @keyframes pulse{0%{transform:scale(1)}45%{transform:scale(1.09)}100%{transform:scale(1)}}
+  .tl-new{animation:tlIn .42s cubic-bezier(.22,1,.36,1)}
+  .pill.flush{animation:pulse .45s cubic-bezier(.22,1,.36,1)}
+
+  .demo-tag{position:fixed;right:14px;bottom:14px;z-index:99;background:var(--ink);color:#fff;font-size:11px;
+            padding:6px 11px;border-radius:99px;opacity:.82;font-weight:500;letter-spacing:.01em}
+
+  /* ---------- KPI strip ---------- */
+  .kpis{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--mist);
+        border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+  .kpi{padding:16px 18px;border-right:1px solid var(--mist)}
+  .kpi:last-child{border-right:none}
+  .kpi .lbl{font-size:11.5px;font-weight:500;color:var(--slate);text-transform:uppercase;letter-spacing:.04em}
+  .kpi .val{font-size:26px;font-weight:600;margin-top:7px;letter-spacing:-.02em}
+  .kpi .val small{font-size:13px;color:var(--slate);font-weight:500}
+  .kpi .delta{font-size:12px;margin-top:4px;font-weight:500;color:var(--won)}
+  .kpi .delta.down{color:var(--lost)}
+
+  .section-head{display:flex;align-items:baseline;justify-content:space-between;margin:26px 2px 12px}
+  .section-head h2{font-size:13px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--slate)}
+  .section-head .hint{font-size:12.5px;color:var(--slate)}
+
+  /* ---------- pipeline spectrum (signature) ---------- */
+  .pipeline{background:var(--surface);border:1px solid var(--mist);border-radius:var(--r);padding:20px;box-shadow:var(--shadow)}
+  .spectrum{display:flex;height:46px;border-radius:7px;overflow:hidden;gap:2px}
+  .seg{position:relative;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:600;
+       font-size:13px;min-width:34px;transition:filter .15s}
+  .seg:hover{filter:brightness(1.06)}
+  .seg .tnum{font-size:14px}
+  .seg[data-s=new]{background:var(--new)} .seg[data-s=contacted]{background:var(--contacted)}
+  .seg[data-s=qualified]{background:var(--qualified)} .seg[data-s=proposal]{background:var(--proposal)}
+  .seg[data-s=won]{background:var(--won)} .seg[data-s=lost]{background:var(--lost)}
+  .legend{display:flex;flex-wrap:wrap;gap:18px;margin-top:16px}
+  .legend div{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink)}
+  .legend span{width:9px;height:9px;border-radius:3px}
+  .legend b{font-weight:600}
+  .legend small{color:var(--slate);font-weight:500}
+
+  .two-col{display:grid;grid-template-columns:1.15fr 1fr;gap:18px;margin-top:26px}
+  .card{background:var(--surface);border:1px solid var(--mist);border-radius:var(--r);box-shadow:var(--shadow)}
+  .card-h{padding:15px 18px;border-bottom:1px solid var(--mist);font-size:13px;font-weight:600;
+          text-transform:uppercase;letter-spacing:.05em;color:var(--slate)}
+  .card-b{padding:16px 18px}
+
+  /* source bars */
+  .srcrow{display:grid;grid-template-columns:88px 1fr 34px;align-items:center;gap:12px;margin-bottom:13px}
+  .srcrow:last-child{margin-bottom:0}
+  .srcrow .name{font-size:13px;color:var(--ink)}
+  .track{height:9px;background:var(--mist-2);border-radius:99px;overflow:hidden}
+  .track i{display:block;height:100%;background:var(--new);border-radius:99px;opacity:.55}
+  .srcrow .c{font-size:13px;color:var(--slate);text-align:right}
+
+  /* activity feed */
+  .feed{display:flex;flex-direction:column}
+  .feeditem{display:flex;gap:12px;padding:11px 0;border-bottom:1px solid var(--mist-2)}
+  .feeditem:last-child{border-bottom:none;padding-bottom:0}
+  .feeditem:first-child{padding-top:0}
+  .dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0}
+  .feeditem .t{font-size:13.5px;line-height:1.4}
+  .feeditem .t b{font-weight:600}
+  .feeditem .when{font-size:12px;color:var(--slate);margin-top:2px}
+  .feeditem .when .tnum{font-size:12px}
+
+  /* ---------- status pill ---------- */
+  .pill{display:inline-flex;align-items:center;gap:6px;padding:3px 9px 3px 8px;border-radius:99px;
+        font-size:12px;font-weight:600;line-height:1.6;white-space:nowrap;
+        transition:background-color .35s ease,color .35s ease}
+  .pill i{width:6px;height:6px;border-radius:50%;transition:background-color .35s ease}
+  .pill[data-s=new]{background:var(--new-t);color:#475264} .pill[data-s=new] i{background:var(--new)}
+  .pill[data-s=contacted]{background:var(--contacted-t);color:#1d54c4} .pill[data-s=contacted] i{background:var(--contacted)}
+  .pill[data-s=qualified]{background:var(--qualified-t);color:#0b7580} .pill[data-s=qualified] i{background:var(--qualified)}
+  .pill[data-s=proposal]{background:var(--proposal-t);color:#a5680a} .pill[data-s=proposal] i{background:var(--proposal)}
+  .pill[data-s=won]{background:var(--won-t);color:#0f7147} .pill[data-s=won] i{background:var(--won)}
+  .pill[data-s=lost]{background:var(--lost-t);color:#b23a34} .pill[data-s=lost] i{background:var(--lost)}
+
+  /* ---------- leads table ---------- */
+  .filters{display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap}
+  .filter{display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 12px;border:1px solid var(--mist);
+          background:var(--surface);border-radius:var(--r-sm);font-size:13px;color:var(--slate);font-weight:500}
+  .filter svg{width:13px;height:13px}
+  .filter b{color:var(--ink);font-weight:600}
+  .tbl-wrap{background:var(--surface);border:1px solid var(--mist);border-radius:var(--r);overflow:hidden;box-shadow:var(--shadow)}
+  table{width:100%;border-collapse:collapse}
+  thead th{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;color:#4a5060;
+           text-align:left;padding:11px 16px;border-bottom:1px solid var(--mist);background:var(--mist-2)}
+  thead th.r{text-align:right}
+  tbody td{padding:13px 16px;border-bottom:1px solid var(--mist-2);font-size:13.5px;vertical-align:middle}
+  tbody tr:last-child td{border-bottom:none}
+  tbody tr{cursor:pointer;transition:background .12s}
+  tbody tr:nth-child(even){background:#fafbfd}
+  tbody tr:hover{background:#f4f4fe}
+  .lead-name{font-weight:600;color:var(--ink)}
+  .lead-sub{font-size:12px;color:var(--slate);margin-top:1px}
+  td.r{text-align:right}
+  .val{font-weight:500}
+  .rm{color:var(--slate);font-size:11.5px;margin-right:2px}
+  .rep{display:inline-flex;align-items:center;gap:8px}
+  .rep .avatar{width:24px;height:24px;font-size:10px}
+  .unassigned{color:#a2a8b6}
+  .rowact{opacity:0;color:var(--wa);transform:translateX(-4px);transition:opacity .16s ease,transform .16s cubic-bezier(.22,1,.36,1)}
+  tr:hover .rowact{opacity:1;transform:none}
+  .rowact svg{width:17px;height:17px}
+  .muted-time{color:var(--slate);font-size:12.5px}
+
+  /* ---------- lead detail ---------- */
+  .detail-top{display:flex;align-items:center;gap:14px;margin-bottom:22px}
+  .back{display:inline-flex;align-items:center;gap:6px;color:var(--slate);font-size:13px;font-weight:500}
+  .back:hover{color:var(--ink)}
+  .back svg{width:15px;height:15px}
+  .detail-title{font-size:22px;font-weight:600;letter-spacing:-.02em}
+  .detail-title span{color:var(--slate);font-weight:500}
+  .detail-grid{display:grid;grid-template-columns:1fr 1.05fr;gap:18px;align-items:start}
+  .dl{display:grid;grid-template-columns:auto 1fr;gap:11px 16px;padding:4px 2px}
+  .dl dt{font-size:12.5px;color:var(--slate);font-weight:500}
+  .dl dd{font-size:13.5px;font-weight:500;text-align:right}
+  .dl dd.tnum{font-weight:600}
+
+  /* stepper */
+  .stepper{display:flex;align-items:center;gap:0;margin:2px 0 18px}
+  .step{display:flex;flex-direction:column;align-items:center;gap:7px;flex:1;position:relative}
+  .step .node{width:15px;height:15px;border-radius:50%;background:var(--mist);border:2px solid var(--mist);z-index:1;
+              transition:background-color .35s ease,border-color .35s ease,box-shadow .35s ease}
+  .step.done .node{background:var(--qualified);border-color:var(--qualified)}
+  .step.current .node{background:#fff;border-color:var(--qualified);box-shadow:0 0 0 4px var(--qualified-t)}
+  .step .lbl{font-size:11.5px;color:var(--slate);font-weight:500;transition:color .35s ease}
+  .step.done .lbl,.step.current .lbl{color:var(--ink);font-weight:600}
+  .step::before{content:"";position:absolute;top:6.5px;left:-50%;width:100%;height:2px;background:var(--mist);transition:background-color .4s ease}
+  .step:first-child::before{display:none}
+  .step.done::before,.step.current::before{background:var(--qualified)}
+  .next-label{font-size:12.5px;color:var(--slate);margin:4px 0 9px}
+  .next-actions{display:flex;gap:9px}
+  .step-btn{height:34px;padding:0 14px;border-radius:var(--r-sm);font-size:13px;font-weight:600;
+            transition:background .18s ease,transform .12s cubic-bezier(.22,1,.36,1)}
+  .step-btn:hover{transform:translateY(-1px)}
+  .step-btn:active{transform:translateY(.5px)}
+  .step-btn.adv{background:var(--proposal-t);color:#a5680a}
+  .step-btn.adv:hover{background:#f7e6c4}
+  .step-btn.won{background:var(--won-t);color:#0f7147}
+  .step-btn.won:hover{background:#d3ecdd}
+  .step-btn.lost{background:var(--lost-t);color:#b23a34}
+  .step-btn.lost:hover{background:#f7dbd9}
+  .step-btn.reopen{background:var(--iris-soft);color:var(--iris)}
+  .step-btn.reopen:hover{background:#e2e0f9}
+  .rule-note{margin-top:12px;font-size:12px;color:var(--slate);display:flex;gap:7px;align-items:flex-start;line-height:1.5}
+  .rule-note svg{width:14px;height:14px;flex-shrink:0;margin-top:1px;color:var(--qualified)}
+
+  /* whatsapp panel */
+  .wa-head{display:flex;align-items:center;gap:9px}
+  .wa-glyph{width:22px;height:22px;color:var(--wa)}
+  .tpl-select{display:flex;gap:8px;margin:14px 0 12px;flex-wrap:wrap}
+  .tpl{padding:6px 11px;border:1px solid var(--mist);border-radius:99px;font-size:12.5px;font-weight:500;color:var(--slate);background:#fff;
+       transition:border-color .2s ease,background-color .2s ease,color .2s ease,transform .06s ease}
+  .tpl:hover{border-color:#c9cdd8;color:var(--ink)}
+  .tpl:active{transform:translateY(.5px)}
+  .tpl.on{border-color:var(--wa);background:#eaf7ef;color:var(--wa-hi);font-weight:600}
+  .wa-preview{background:#f4f6f4;border:1px solid var(--mist);border-radius:var(--r-sm);padding:13px 14px;
+              font-size:13.5px;line-height:1.5;color:#2b2f36}
+  .wa-preview .hl{background:#fff7dd;padding:0 3px;border-radius:3px}
+  .wa-foot{display:flex;align-items:center;justify-content:space-between;margin-top:13px}
+  .wa-foot small{font-size:11.5px;color:var(--slate);max-width:60%;line-height:1.4}
+
+  /* timeline */
+  .timeline{position:relative;padding-left:6px}
+  .tl{display:flex;gap:13px;padding-bottom:16px;position:relative}
+  .tl:last-child{padding-bottom:0}
+  .tl-rail{position:absolute;left:5px;top:14px;bottom:-4px;width:2px;background:var(--mist-2)}
+  .tl:last-child .tl-rail{display:none}
+  .tl-dot{width:12px;height:12px;border-radius:50%;flex-shrink:0;margin-top:2px;border:2px solid #fff;box-shadow:0 0 0 1px var(--mist);z-index:1}
+  .tl-body .t{font-size:13.5px;line-height:1.45}
+  .tl-body .t b{font-weight:600}
+  .tl-body .m{font-size:12px;color:var(--slate);margin-top:2px}
+
+  /* ---------- login ---------- */
+  #login{display:none;min-height:100vh;place-items:center;padding:24px;background:
+    radial-gradient(1100px 500px at 50% -10%, #f0f1fb 0%, var(--fog) 55%)}
+  #login.active{display:grid}
+  .login-card{width:100%;max-width:380px;background:var(--surface);border:1px solid var(--mist);
+              border-radius:14px;padding:30px 28px 26px;box-shadow:0 10px 40px rgba(20,22,34,.08)}
+  .login-brand{display:flex;align-items:center;gap:11px;margin-bottom:22px}
+  .login-brand b{font-size:16px;font-weight:600;letter-spacing:-.01em}
+  .login-h{font-size:19px;font-weight:600;letter-spacing:-.01em}
+  .login-sub{font-size:13.5px;color:var(--slate);margin:4px 0 22px}
+  .field{margin-bottom:14px}
+  .field label{display:block;font-size:12.5px;font-weight:500;color:var(--ink);margin-bottom:6px}
+  .field input{width:100%;height:40px;border:1px solid var(--mist);border-radius:var(--r-sm);padding:0 12px;font-size:14px}
+  .field input:focus{outline:none;border-color:var(--iris);box-shadow:0 0 0 3px var(--iris-ring)}
+  .login-card .btn-primary{width:100%;justify-content:center;height:42px;margin-top:6px;font-size:14px}
+  .login-note{font-size:12px;color:var(--slate);text-align:center;margin-top:16px;line-height:1.5}
+
+  @media (max-width:920px){
+    .rail{width:64px}
+    .brand b,.brand span,.navitem span,.rail-scope,.userchip .meta,.signout{display:none}
+    .brand{justify-content:center;padding:18px 0}
+    .navitem{justify-content:center;padding:11px 0}
+    .userchip{justify-content:center}
+    .kpis{grid-template-columns:repeat(2,1fr)}
+    .kpi:nth-child(2){border-right:none}
+    .kpi:nth-child(1),.kpi:nth-child(2){border-bottom:1px solid var(--mist)}
+    .two-col,.detail-grid{grid-template-columns:1fr}
+    .search{max-width:none}
+  }
+  @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+<!-- ========== LOGIN ========== -->
+<div id="login" class="screen-root">
+  <div class="login-card">
+    <div class="login-brand">
+      <span class="mark"><i></i><i></i><i></i><i></i><i></i></span>
+      <b>Leadway</b>
+    </div>
+    <div class="login-h">Sign in</div>
+    <div class="login-sub">Manage your team's leads and pipeline.</div>
+    <div class="field">
+      <label for="em">Email</label>
+      <input id="em" type="email" value="hafiz@company.my" autocomplete="username">
+    </div>
+    <div class="field">
+      <label for="pw">Password</label>
+      <input id="pw" type="password" value="········" autocomplete="current-password">
+    </div>
+    <button class="btn btn-primary" onclick="enter()">Sign in</button>
+    <div class="login-note">No public sign-up — accounts are created by an Admin.</div>
+  </div>
+</div>
+
+<!-- ========== APP ========== -->
+<div id="appshell" class="app" style="display:none">
+  <aside class="rail">
+    <div class="brand">
+      <span class="mark"><i></i><i></i><i></i><i></i><i></i></span>
+      <b>Leadway</b>
+    </div>
+    <nav class="rail-nav">
+      <button class="navitem active" data-nav="dashboard">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg>
+        <span>Dashboard</span>
+      </button>
+      <button class="navitem" data-nav="leads">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <span>Leads</span>
+      </button>
+      <button class="navitem locked" title="Admin only" aria-disabled="true">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="9" cy="8" r="3.2"/><path d="M4 20c0-3 2.2-5 5-5s5 2 5 5"/><circle cx="17.5" cy="9" r="2.4"/><path d="M15 20c0-2.4 1.3-4 3-4.3"/></svg>
+        <span>Users</span>
+        <svg class="lock" viewBox="0 0 24 24" fill="none" stroke="currentColor"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>
+      </button>
+    </nav>
+    <div class="rail-scope">Viewing <b>team-wide</b> pipeline. You manage all leads and assignments.</div>
+    <div class="rail-foot">
+      <div class="userchip">
+        <span class="avatar" style="background:#4A45E0">HZ</span>
+        <div class="meta"><b>Hafiz Rahman</b><span class="rolebadge">Manager</span></div>
+        <button class="signout" title="Sign out" onclick="signout()">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M15 12H4m0 0 4-4m-4 4 4 4"/><path d="M11 4h6a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"/></svg>
+        </button>
+      </div>
+    </div>
+  </aside>
+
+  <div class="main">
+    <!-- topbar changes label per screen via JS -->
+    <header class="topbar">
+      <div class="page-title" id="ptitle">Dashboard</div>
+      <div class="search">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg>
+        <input placeholder="Search leads by name, phone, or company">
+      </div>
+      <div class="spacer"></div>
+      <span class="scope-pill"><i></i> Team view</span>
+      <button class="btn btn-primary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 5v14M5 12h14"/></svg> New lead</button>
+    </header>
+
+    <!-- ===== DASHBOARD ===== -->
+    <section id="dashboard" class="screen active">
+      <div class="kpis">
+        <div class="kpi"><div class="lbl">Total leads</div><div class="val tnum"><span class="num" data-to="142">142</span></div><div class="delta">+11 this week</div></div>
+        <div class="kpi"><div class="lbl">Pipeline value</div><div class="val tnum"><small>RM</small> <span class="num" data-to="486200" data-fmt="comma">486,200</span></div><div class="delta">+RM 38k</div></div>
+        <div class="kpi"><div class="lbl">Won this month</div><div class="val tnum"><small>RM</small> <span class="num" data-to="92000" data-fmt="comma">92,000</span></div><div class="delta">6 deals</div></div>
+        <div class="kpi"><div class="lbl">Conversion rate</div><div class="val tnum"><span class="num" data-to="18">18</span><small>%</small></div><div class="delta down">−2 pts</div></div>
+      </div>
+
+      <div class="section-head"><h2>The pipeline</h2><span class="hint">142 active &amp; closed leads · width = count</span></div>
+      <div class="pipeline">
+        <div class="spectrum" id="spectrum">
+          <div class="seg" data-s="new" style="flex-grow:38" title="New — 38"><span class="tnum">38</span></div>
+          <div class="seg" data-s="contacted" style="flex-grow:41" title="Contacted — 41"><span class="tnum">41</span></div>
+          <div class="seg" data-s="qualified" style="flex-grow:22" title="Qualified — 22"><span class="tnum">22</span></div>
+          <div class="seg" data-s="proposal" style="flex-grow:14" title="Proposal — 14"><span class="tnum">14</span></div>
+          <div class="seg" data-s="won" style="flex-grow:19" title="Won — 19"><span class="tnum">19</span></div>
+          <div class="seg" data-s="lost" style="flex-grow:8" title="Lost — 8"><span class="tnum">8</span></div>
+        </div>
+        <div class="legend">
+          <div><span style="background:var(--new)"></span><b>New</b>&nbsp;<small class="tnum">38</small></div>
+          <div><span style="background:var(--contacted)"></span><b>Contacted</b>&nbsp;<small class="tnum">41</small></div>
+          <div><span style="background:var(--qualified)"></span><b>Qualified</b>&nbsp;<small class="tnum">22</small></div>
+          <div><span style="background:var(--proposal)"></span><b>Proposal</b>&nbsp;<small class="tnum">14</small></div>
+          <div><span style="background:var(--won)"></span><b>Won</b>&nbsp;<small class="tnum">19</small></div>
+          <div><span style="background:var(--lost)"></span><b>Lost</b>&nbsp;<small class="tnum">8</small></div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="card">
+          <div class="card-h">Source breakdown</div>
+          <div class="card-b">
+            <div class="srcrow"><div class="name">Website</div><div class="track"><i style="width:82%"></i></div><div class="c tnum">47</div></div>
+            <div class="srcrow"><div class="name">Referral</div><div class="track"><i style="width:60%"></i></div><div class="c tnum">34</div></div>
+            <div class="srcrow"><div class="name">Event</div><div class="track"><i style="width:41%"></i></div><div class="c tnum">23</div></div>
+            <div class="srcrow"><div class="name">Walk-in</div><div class="track"><i style="width:28%"></i></div><div class="c tnum">16</div></div>
+            <div class="srcrow"><div class="name">Social media</div><div class="track"><i style="width:25%"></i></div><div class="c tnum">14</div></div>
+            <div class="srcrow"><div class="name">Other</div><div class="track"><i style="width:14%"></i></div><div class="c tnum">8</div></div>
+          </div>
+        </div>
+        <div class="card">
+          <div class="card-h">Recent activity</div>
+          <div class="card-b">
+            <div class="feed">
+              <div class="feeditem"><span class="dot" style="background:var(--qualified)"></span><div><div class="t"><b>Nurul Aziz</b> moved to Qualified</div><div class="when">by Hui Ting · <span class="tnum">2h</span> ago</div></div></div>
+              <div class="feeditem"><span class="dot" style="background:var(--wa)"></span><div><div class="t">WhatsApp sent to <b>Wei Jie Tan</b> · Intro</div><div class="when">by Farid · <span class="tnum">3h</span> ago</div></div></div>
+              <div class="feeditem"><span class="dot" style="background:var(--won)"></span><div><div class="t"><b>David Lim</b> marked Won · <span class="tnum">RM&nbsp;120,000</span></div><div class="when">by Hui Ting · <span class="tnum">5h</span> ago</div></div></div>
+              <div class="feeditem"><span class="dot" style="background:var(--iris)"></span><div><div class="t"><b>Siti Rahayu</b> assigned to Farid</div><div class="when">by you · <span class="tnum">1d</span> ago</div></div></div>
+              <div class="feeditem"><span class="dot" style="background:var(--proposal)"></span><div><div class="t"><b>Ahmad Faizal</b> moved to Proposal</div><div class="when">by Farid · <span class="tnum">1d</span> ago</div></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ===== LEADS ===== -->
+    <section id="leads" class="screen">
+      <div class="filters">
+        <button class="filter"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 5h18l-7 8v5l-4 2v-7z"/></svg>Status <b>All</b></button>
+        <button class="filter">Source <b>All</b></button>
+        <button class="filter">Assigned rep <b>All</b></button>
+        <div class="spacer"></div>
+        <button class="filter"><b class="tnum">12</b>&nbsp;leads</button>
+      </div>
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>Name</th><th>Company</th><th>Status</th><th>Assigned rep</th><th class="r">Deal value</th><th>Last activity</th><th></th></tr></thead>
+          <tbody id="leadrows">
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Nurul Aziz</div><div class="lead-sub tnum">+60 12-345 6789</div></td>
+              <td>Petronas SB</td>
+              <td><span class="pill" data-s="qualified"><i></i>Qualified</span></td>
+              <td><span class="rep"><span class="avatar" style="background:#0E9AA7">HT</span>Hui Ting</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">48,000</span></td>
+              <td class="muted-time">2h ago</td>
+              <td><span class="rowact" title="WhatsApp"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Wei Jie Tan</div><div class="lead-sub tnum">+60 16-882 4410</div></td>
+              <td>Grab Malaysia</td>
+              <td><span class="pill" data-s="contacted"><i></i>Contacted</span></td>
+              <td><span class="unassigned">— Unassigned</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">12,500</span></td>
+              <td class="muted-time">3h ago</td>
+              <td><span class="rowact"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Siti Rahayu</div><div class="lead-sub tnum">+60 19-770 1123</div></td>
+              <td>Maybank</td>
+              <td><span class="pill" data-s="proposal"><i></i>Proposal</span></td>
+              <td><span class="rep"><span class="avatar" style="background:#D98A0B">FA</span>Farid</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">90,000</span></td>
+              <td class="muted-time">4h ago</td>
+              <td><span class="rowact"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">David Lim</div><div class="lead-sub tnum">+60 12-901 5567</div></td>
+              <td>AirAsia</td>
+              <td><span class="pill" data-s="won"><i></i>Won</span></td>
+              <td><span class="rep"><span class="avatar" style="background:#0E9AA7">HT</span>Hui Ting</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">120,000</span></td>
+              <td class="muted-time">5h ago</td>
+              <td></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Ahmad Faizal</div><div class="lead-sub tnum">+60 13-448 2290</div></td>
+              <td>Sunway Group</td>
+              <td><span class="pill" data-s="proposal"><i></i>Proposal</span></td>
+              <td><span class="rep"><span class="avatar" style="background:#D98A0B">FA</span>Farid</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">64,500</span></td>
+              <td class="muted-time">1d ago</td>
+              <td><span class="rowact"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Mei Ling Chong</div><div class="lead-sub tnum">+60 17-330 8842</div></td>
+              <td>Top Glove</td>
+              <td><span class="pill" data-s="new"><i></i>New</span></td>
+              <td><span class="unassigned">— Unassigned</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">30,000</span></td>
+              <td class="muted-time">1d ago</td>
+              <td><span class="rowact"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Ravi Kumar</div><div class="lead-sub tnum">+60 11-2984 6610</div></td>
+              <td>Axiata</td>
+              <td><span class="pill" data-s="qualified"><i></i>Qualified</span></td>
+              <td><span class="rep"><span class="avatar" style="background:#D98A0B">FA</span>Farid</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">55,000</span></td>
+              <td class="muted-time">2d ago</td>
+              <td><span class="rowact"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Farah Nadia</div><div class="lead-sub tnum">+60 18-664 2201</div></td>
+              <td>Genting</td>
+              <td><span class="pill" data-s="new"><i></i>New</span></td>
+              <td><span class="unassigned">— Unassigned</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">21,000</span></td>
+              <td class="muted-time">2d ago</td>
+              <td><span class="rowact"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Kok Wai Lee</div><div class="lead-sub tnum">+60 12-556 7781</div></td>
+              <td>Public Bank</td>
+              <td><span class="pill" data-s="lost"><i></i>Lost</span></td>
+              <td><span class="rep"><span class="avatar" style="background:#0E9AA7">HT</span>Hui Ting</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">40,000</span></td>
+              <td class="muted-time">3d ago</td>
+              <td></td>
+            </tr>
+            <tr onclick="openLead()">
+              <td><div class="lead-name">Zulkifli Hassan</div><div class="lead-sub tnum">+60 13-220 9934</div></td>
+              <td>MISC Berhad</td>
+              <td><span class="pill" data-s="contacted"><i></i>Contacted</span></td>
+              <td><span class="rep"><span class="avatar" style="background:#0E9AA7">HT</span>Hui Ting</span></td>
+              <td class="r val"><span class="rm">RM</span><span class="tnum">78,000</span></td>
+              <td class="muted-time">3d ago</td>
+              <td><span class="rowact"><svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg></span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ===== LEAD DETAIL ===== -->
+    <section id="lead-detail" class="screen">
+      <div class="detail-top">
+        <button class="back" data-nav="leads"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m15 18-6-6 6-6"/></svg>Leads</button>
+      </div>
+      <div style="display:flex;align-items:center;gap:14px;margin-bottom:22px">
+        <div class="detail-title">Nurul Aziz <span>· Petronas SB</span></div>
+        <span class="pill" id="hdrPill" data-s="qualified" style="font-size:12.5px"><i></i>Qualified</span>
+      </div>
+
+      <div class="detail-grid">
+        <!-- left column -->
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="card">
+            <div class="card-h">Lead info</div>
+            <div class="card-b">
+              <dl class="dl">
+                <dt>Phone</dt><dd class="tnum">+60 12-345 6789</dd>
+                <dt>Email</dt><dd>nurul.aziz@petronas.my</dd>
+                <dt>Company</dt><dd>Petronas SB</dd>
+                <dt>Source</dt><dd>Referral</dd>
+                <dt>Deal value</dt><dd class="tnum">RM 48,000</dd>
+                <dt>Assigned rep</dt><dd>Hui Ting</dd>
+                <dt>Created</dt><dd>28 Jun 2026</dd>
+              </dl>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h">Activity</div>
+            <div class="card-b">
+              <div class="timeline" id="timeline">
+                <div class="tl"><div class="tl-rail"></div><span class="tl-dot" style="background:var(--qualified)"></span><div class="tl-body"><div class="t">Status moved <b>Contacted → Qualified</b></div><div class="m">Hui Ting · 2h ago</div></div></div>
+                <div class="tl"><div class="tl-rail"></div><span class="tl-dot" style="background:var(--wa)"></span><div class="tl-body"><div class="t">WhatsApp contact · <b>Intro template</b></div><div class="m">Hui Ting · 4h ago</div></div></div>
+                <div class="tl"><div class="tl-rail"></div><span class="tl-dot" style="background:var(--contacted)"></span><div class="tl-body"><div class="t">Status moved <b>New → Contacted</b></div><div class="m">Hui Ting · yesterday</div></div></div>
+                <div class="tl"><div class="tl-rail"></div><span class="tl-dot" style="background:var(--iris)"></span><div class="tl-body"><div class="t">Assigned to <b>Hui Ting</b></div><div class="m">Hafiz (you) · 2 days ago</div></div></div>
+                <div class="tl"><span class="tl-dot" style="background:var(--new)"></span><div class="tl-body"><div class="t">Lead created · source <b>Referral</b></div><div class="m">Hafiz (you) · 28 Jun 2026</div></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- right column -->
+        <div style="display:flex;flex-direction:column;gap:18px">
+          <div class="card">
+            <div class="card-h">Advance status</div>
+            <div class="card-b">
+              <div class="stepper" id="stepper"></div>
+              <div class="next-label" id="nextLabel"></div>
+              <div class="next-actions" id="nextActions"></div>
+              <div class="rule-note">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg>
+                One step forward at a time. Jumping straight to Won isn't offered — the transition rule only surfaces legal moves.
+              </div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-h">Contact via WhatsApp</div>
+            <div class="card-b">
+              <div class="wa-head">
+                <svg class="wa-glyph" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.2c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1-.4-.1-.9-.3-1.6-.6-2.8-1.2-4.6-4-4.7-4.2-.1-.2-1.1-1.5-1.1-2.8s.7-2 .9-2.2c.2-.3.5-.3.7-.3h.5c.2 0 .4 0 .6.5l.8 1.9c.1.2.1.4 0 .5l-.4.6c-.1.2-.3.3-.1.6.1.3.7 1.1 1.4 1.7.9.8 1.7 1.1 2 1.2.2.1.4.1.5-.1l.6-.7c.2-.2.4-.2.6-.1l1.8.9c.2.1.4.2.4.3.1.1.1.6-.1 1.2Z"/></svg>
+                <div style="font-size:13px;color:var(--slate)">Opens WhatsApp with a pre-filled message and logs the contact.</div>
+              </div>
+              <div class="tpl-select">
+                <button class="tpl on">Intro</button>
+                <button class="tpl">Follow-up</button>
+                <button class="tpl">Proposal follow-up</button>
+              </div>
+              <div class="wa-preview">Hi <span class="hl">Nurul</span>, this is <span class="hl">Hui Ting</span>. Thanks for your interest — I'd love to help <span class="hl">Petronas SB</span> with our solution. Are you free for a quick chat this week?</div>
+              <div class="wa-foot">
+                <small>Logs a WhatsApp Contact — intent to contact, not proof of delivery.</small>
+                <button class="btn btn-wa">Open WhatsApp</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+</div>
+
+<div class="demo-tag">Static design mockup — not wired to a database</div>
+
+<script>
+  const RM = new Intl.NumberFormat('en-MY');
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  /* ---------- motion helpers ---------- */
+  function countUp(el,to,fmt){
+    const fin=fmt==='comma'?RM.format(to):String(to);
+    if(reduce){el.textContent=fin;return;}
+    const dur=950,start=performance.now();let done=false;
+    (function tick(now){
+      if(done)return;
+      const p=Math.min(1,(now-start)/dur), e=1-Math.pow(1-p,3), v=Math.round(to*e);
+      el.textContent=fmt==='comma'?RM.format(v):String(v);
+      if(p<1)requestAnimationFrame(tick); else{done=true;el.textContent=fin;}
+    })(start);
+    // guarantee the final value even if rAF is throttled (backgrounded tab)
+    setTimeout(()=>{done=true;el.textContent=fin;},dur+150);
+  }
+  function runCountUps(){document.querySelectorAll('#dashboard .num').forEach(el=>countUp(el,+el.dataset.to,el.dataset.fmt));}
+  function wipeFunnel(){
+    const sp=document.getElementById('spectrum');
+    if(reduce){sp.style.clipPath='none';return;}
+    sp.animate([{clipPath:'inset(0 100% 0 0)'},{clipPath:'inset(0 0 0 0)'}],{duration:680,easing:'cubic-bezier(.22,1,.36,1)'});
+  }
+  function reveal(sel,base=60,step=55){
+    if(reduce)return;
+    document.querySelectorAll(sel).forEach((el,i)=>el.animate(
+      [{opacity:0,transform:'translateY(10px)'},{opacity:1,transform:'none'}],
+      {duration:430,delay:base+i*step,easing:'cubic-bezier(.22,1,.36,1)',fill:'backwards'}));
+  }
+
+  /* ---------- navigation ---------- */
+  const titles={dashboard:'Dashboard',leads:'Leads','lead-detail':'Lead'};
+  function go(id){
+    document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('active',s.id===id));
+    document.querySelectorAll('.navitem').forEach(n=>n.classList.toggle('active',n.dataset.nav===id));
+    if(titles[id])document.getElementById('ptitle').textContent=titles[id];
+    window.scrollTo(0,0);
+    if(id==='dashboard'){runCountUps();wipeFunnel();reveal('#dashboard .kpi',40,65);reveal('#dashboard .pipeline',290,0);reveal('#dashboard .two-col > .card',360,95);}
+    if(id==='leads'){reveal('#leadrows tr',30,45);}
+    if(id==='lead-detail'){reveal('#lead-detail .detail-grid > div > .card',40,95);}
+  }
+  document.querySelectorAll('[data-nav]').forEach(el=>el.addEventListener('click',()=>go(el.dataset.nav)));
+  function openLead(){go('lead-detail');}
+  function enter(){document.getElementById('login').classList.remove('active');document.getElementById('appshell').style.display='flex';renderStatus();go('dashboard');}
+  function signout(){document.getElementById('appshell').style.display='none';document.getElementById('login').classList.add('active');}
+
+  /* ---------- WhatsApp templates ---------- */
+  const CTX={name:'Nurul',company:'Petronas SB',rep:'Hui Ting'};
+  const TPL={
+    'Intro':n=>`Hi <span class="hl">${n.name}</span>, this is <span class="hl">${n.rep}</span>. Thanks for your interest — I'd love to help <span class="hl">${n.company}</span> with our solution. Are you free for a quick chat this week?`,
+    'Follow-up':n=>`Hi <span class="hl">${n.name}</span>, following up on our earlier conversation. Do you have any questions I can help with?`,
+    'Proposal follow-up':n=>`Hi <span class="hl">${n.name}</span>, just checking in on the proposal we sent <span class="hl">${n.company}</span>. Happy to walk you through it whenever suits you.`
+  };
+  document.querySelectorAll('.tpl').forEach(t=>t.addEventListener('click',()=>{
+    document.querySelectorAll('.tpl').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    document.querySelector('.wa-preview').innerHTML=TPL[t.textContent.trim()](CTX);
+  }));
+
+  /* ---------- status model & transitions (mirrors lib/transitions.ts) ---------- */
+  const ORDER=['NEW','CONTACTED','QUALIFIED','PROPOSAL','WON'];
+  const SUI={NEW:{label:'New',key:'new'},CONTACTED:{label:'Contacted',key:'contacted'},QUALIFIED:{label:'Qualified',key:'qualified'},PROPOSAL:{label:'Proposal',key:'proposal'},WON:{label:'Won',key:'won'},LOST:{label:'Lost',key:'lost'}};
+  const DOT={NEW:'var(--new)',CONTACTED:'var(--contacted)',QUALIFIED:'var(--qualified)',PROPOSAL:'var(--proposal)',WON:'var(--won)',LOST:'var(--lost)'};
+  let status='QUALIFIED', lostFrom='QUALIFIED';
+
+  function legalNext(s){
+    if(s==='WON'||s==='LOST')return[];
+    const fwd=ORDER[ORDER.indexOf(s)+1], out=[];
+    if(fwd)out.push({to:fwd,cls:fwd==='WON'?'won':'adv',label:fwd==='WON'?'Mark Won':'Move to '+SUI[fwd].label+' →'});
+    out.push({to:'LOST',cls:'lost',label:'Mark Lost'});
+    return out;
+  }
+  function renderStepper(){
+    const cur=ORDER.indexOf(status), lf=ORDER.indexOf(lostFrom);
+    document.getElementById('stepper').innerHTML=ORDER.map((s,i)=>{
+      let c='step';
+      if(status==='LOST'){if(i<=lf)c+=' done';}
+      else{if(i<cur)c+=' done';else if(i===cur)c+=' current';}
+      return `<div class="${c}"><span class="node"></span><span class="lbl">${SUI[s].label}</span></div>`;
+    }).join('');
+  }
+  function renderActions(){
+    const lbl=document.getElementById('nextLabel'), act=document.getElementById('nextActions');
+    if(status==='WON'||status==='LOST'){
+      lbl.textContent=SUI[status].label+' is frozen — Managers and Admins can reopen.';
+      const to=status==='WON'?'PROPOSAL':lostFrom;
+      act.innerHTML=`<button class="step-btn reopen" onclick="reopen('${to}')">Reopen to ${SUI[to].label}</button>`;
+    }else{
+      lbl.textContent='Allowed next steps from '+SUI[status].label+':';
+      act.innerHTML=legalNext(status).map(a=>`<button class="step-btn ${a.cls}" onclick="advance('${a.to}')">${a.label}</button>`).join('');
+    }
+  }
+  function renderPill(){
+    const p=document.getElementById('hdrPill');
+    p.dataset.s=SUI[status].key; p.innerHTML='<i></i>'+SUI[status].label;
+    if(!reduce){p.classList.remove('flush');void p.offsetWidth;p.classList.add('flush');}
+  }
+  function renderStatus(){renderPill();renderStepper();renderActions();}
+  function addTimeline(text,color){
+    const tl=document.getElementById('timeline'), it=document.createElement('div');
+    it.className='tl tl-new';
+    it.innerHTML=`<div class="tl-rail"></div><span class="tl-dot" style="background:${color}"></span><div class="tl-body"><div class="t">${text}</div><div class="m">Hui Ting · just now</div></div>`;
+    tl.insertBefore(it,tl.firstChild);
+  }
+  function advance(to){
+    const from=status;
+    if(to==='LOST'){lostFrom=from;addTimeline(`Status moved <b>${SUI[from].label} → Lost</b>`,DOT.LOST);}
+    else addTimeline(`Status moved <b>${SUI[from].label} → ${SUI[to].label}</b>`,DOT[to]);
+    status=to;renderStatus();
+  }
+  function reopen(to){addTimeline(`Lead reopened <b>→ ${SUI[to].label}</b>`,'var(--iris)');status=to;renderStatus();}
+
+  /* boot on login */
+  document.getElementById('login').classList.add('active');
+</script>
+</body>
+</html>

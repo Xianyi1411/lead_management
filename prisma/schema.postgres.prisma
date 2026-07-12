@@ -1,0 +1,68 @@
+// PRODUCTION schema — PostgreSQL on Neon (ADR-0001). Must stay model-identical to
+// schema.prisma (the SQLite dev/demo schema); only the datasource differs.
+//
+// Used automatically by the `vercel-build` script (generate + db push) and by the
+// one-time `db:prod:seed` script. Local development never touches this file.
+//
+// dealValue stays Int (whole RM) to keep the generated client's types identical
+// across both providers — switching it to Decimal here would change the client API.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  name         String
+  email        String   @unique
+  passwordHash String
+  role         String   @default("SALES_REP") // Role: ADMIN | MANAGER | SALES_REP
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+
+  assignedLeads Lead[]     @relation("AssignedTo")
+  createdLeads  Lead[]     @relation("CreatedBy")
+  activities    Activity[]
+}
+
+model Lead {
+  id           String   @id @default(cuid())
+  name         String
+  phone        String
+  email        String?
+  company      String?
+  source       String   @default("OTHER") // LeadSource
+  status       String   @default("NEW")   // LeadStatus
+  dealValue    Int      @default(0)        // RM, whole ringgit
+  notes        String?
+  assignedToId String?
+  createdById  String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  assignedTo User?      @relation("AssignedTo", fields: [assignedToId], references: [id])
+  createdBy  User       @relation("CreatedBy", fields: [createdById], references: [id])
+  activities Activity[]
+
+  @@index([status])
+  @@index([assignedToId])
+}
+
+model Activity {
+  id        String   @id @default(cuid())
+  leadId    String
+  userId    String
+  type      String // ActivityType: WHATSAPP_CONTACT | STATUS_CHANGE | ASSIGNMENT | NOTE | CREATED
+  detail    String
+  createdAt DateTime @default(now())
+
+  lead Lead @relation(fields: [leadId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([leadId])
+}
