@@ -262,132 +262,156 @@ function slideERD() {
 }
 
 // ---------------------------------------------------------------------------
-// Slide 2 · System architecture
+// Slide 2 · How the system works (deliberately non-technical — for executives)
 // ---------------------------------------------------------------------------
 function slideArchitecture() {
   const s = baseSlide(
-    "System architecture",
-    "SLIDE  ·  SYSTEM DESIGN"
+    "How the system works",
+    "SLIDE  ·  A LOOK UNDER THE HOOD"
   );
   s.addText(
-    "Next.js full-stack on Vercel · Prisma over PostgreSQL (Neon) · WhatsApp click-to-chat (ADR-0002)",
-    { x: 0.5, y: 1.35, w: 12.33, h: 0.3, fontFace: FONT, fontSize: 12, color: C.slate }
+    "Three groups of people. One app. One clear record of what happened.",
+    { x: 0.5, y: 1.35, w: 12.33, h: 0.3, fontFace: FONT, fontSize: 13, color: C.slate }
   );
 
-  // Row layout: Client → Edge/Server → Data · with an external WhatsApp column.
-  const rowY = 2.0, rowH = 3.9;
-  const gap = 0.35;
-  const boxW = 2.9;
+  // ---- Main diagram: three columns · people → app → outputs -----------------
+  const topY = 2.0, topH = 3.7;
 
-  // ---- 1. Client ----
-  const c1x = 0.5;
-  card(s, { x: c1x, y: rowY, w: boxW, h: rowH, title: "CLIENT (BROWSER)", accent: C.ct });
-  const clientLines = [
-    { t: "React server components", sub: "role-scoped dashboard, leads, reports" },
-    { t: "Client components", sub: "dialogs, dropdowns, motion" },
-    { t: "Custom Dropdown, Modal", sub: "no native selects app-wide" },
-    { t: "Motion layer", sub: "count-up, funnel wipe, pill flush" },
-    { t: "HTTPS / cookies", sub: "session token (HttpOnly, SameSite=lax)" },
+  // 1. The team (left)
+  const p1x = 0.5, p1w = 3.05;
+  card(s, { x: p1x, y: topY, w: p1w, h: topH, title: "THE TEAM", accent: C.iris });
+
+  const people = [
+    { role: "Admin", desc: "Runs the account · manages users", dot: C.iris },
+    { role: "Manager", desc: "Owns the pipeline · assigns leads · reviews reports", dot: C.qu },
+    { role: "Sales Rep", desc: "Works assigned leads · updates status · WhatsApps", dot: C.pr },
   ];
-  clientLines.forEach((l, i) => {
-    const y = rowY + 0.62 + i * 0.6;
+  people.forEach((p, i) => {
+    const y = topY + 0.65 + i * 0.95;
+    // Person "avatar"
     s.addShape(pptx.ShapeType.ellipse, {
-      x: c1x + 0.18, y: y + 0.06, w: 0.11, h: 0.11,
-      fill: { color: C.iris }, line: { type: "none" },
+      x: p1x + 0.2, y: y + 0.05, w: 0.42, h: 0.42,
+      fill: { color: p.dot }, line: { type: "none" },
     });
-    s.addText(l.t, { x: c1x + 0.38, y, w: boxW - 0.5, h: 0.28,
-      fontFace: FONT, fontSize: 11, bold: true, color: C.ink });
-    s.addText(l.sub, { x: c1x + 0.38, y: y + 0.28, w: boxW - 0.5, h: 0.28,
-      fontFace: FONT, fontSize: 9.5, italic: true, color: C.slate });
-  });
-
-  // ---- 2. Server (Next.js on Vercel, pinned sin1) ----
-  const c2x = c1x + boxW + gap;
-  card(s, { x: c2x, y: rowY, w: boxW, h: rowH, title: "NEXT.JS · VERCEL sin1", accent: C.qu });
-  const serverLines = [
-    { t: "Middleware", sub: "auth gate — verifies session cookie" },
-    { t: "Server actions", sub: "recheck can() + transition rule" },
-    { t: "lib/permissions.ts", sub: "pure, unit-tested (14 tests)" },
-    { t: "lib/transitions.ts", sub: "one-step-forward funnel rule" },
-    { t: "lib/scoring.ts", sub: "fit score, temperature (ADR-0003)" },
-    { t: "lib/velocity.ts", sub: "time-in-stage, conversion, cycle" },
-    { t: "lib/whatsapp.ts", sub: "phone normalise, wa.me link, roles" },
-  ];
-  serverLines.forEach((l, i) => {
-    const y = rowY + 0.62 + i * 0.44;
-    s.addShape(pptx.ShapeType.ellipse, {
-      x: c2x + 0.18, y: y + 0.05, w: 0.11, h: 0.11,
-      fill: { color: C.iris }, line: { type: "none" },
+    s.addText(p.role, {
+      x: p1x + 0.72, y, w: p1w - 0.85, h: 0.3,
+      fontFace: FONT, fontSize: 13, bold: true, color: C.ink,
     });
-    s.addText(l.t, { x: c2x + 0.38, y, w: boxW - 0.5, h: 0.24,
-      fontFace: FONT, fontSize: 10.5, bold: true, color: C.ink });
-    s.addText(l.sub, { x: c2x + 0.38, y: y + 0.22, w: boxW - 0.5, h: 0.22,
-      fontFace: FONT, fontSize: 9, italic: true, color: C.slate });
-  });
-
-  // ---- 3. Data ----
-  const c3x = c2x + boxW + gap;
-  card(s, { x: c3x, y: rowY, w: boxW, h: rowH, title: "PRISMA + POSTGRES (NEON sin1)", accent: C.pr });
-  const dataLines = [
-    { t: "User · Lead · Activity", sub: "core entities (Blueprint §6)" },
-    { t: "CustomSource", sub: "team-added sources (§14.7)" },
-    { t: "MessageTemplate", sub: "editable WA templates (§14.9)" },
-    { t: "Dual Prisma schemas", sub: "SQLite dev · Postgres prod" },
-    { t: "vercel-build script", sub: "generate + db push + next build" },
-    { t: "Neon Singapore direct URL", sub: "same region as fns (latency fix)" },
-  ];
-  dataLines.forEach((l, i) => {
-    const y = rowY + 0.62 + i * 0.5;
-    s.addShape(pptx.ShapeType.ellipse, {
-      x: c3x + 0.18, y: y + 0.05, w: 0.11, h: 0.11,
-      fill: { color: C.iris }, line: { type: "none" },
+    s.addText(p.desc, {
+      x: p1x + 0.72, y: y + 0.3, w: p1w - 0.85, h: 0.5,
+      fontFace: FONT, fontSize: 9.5, color: C.slate, valign: "top",
     });
-    s.addText(l.t, { x: c3x + 0.38, y, w: boxW - 0.5, h: 0.26,
-      fontFace: FONT, fontSize: 11, bold: true, color: C.ink });
-    s.addText(l.sub, { x: c3x + 0.38, y: y + 0.24, w: boxW - 0.5, h: 0.24,
-      fontFace: FONT, fontSize: 9.5, italic: true, color: C.slate });
   });
 
-  // ---- 4. External · WhatsApp (right column) ----
-  const c4x = c3x + boxW + gap;
-  const c4w = 13.333 - c4x - 0.5;
-  card(s, { x: c4x, y: rowY, w: c4w, h: rowH, title: "EXTERNAL", accent: C.wn });
-  s.addText("wa.me deep link", {
-    x: c4x + 0.18, y: rowY + 0.65, w: c4w - 0.3, h: 0.3,
-    fontFace: FONT, fontSize: 12, bold: true, color: C.ink,
-  });
-  s.addText(
-    "Server builds https://wa.me/<phone>?text=<msg>; the client opens it in a new tab. WhatsApp itself handles delivery — the app logs INTENT (a WHATSAPP_CONTACT activity), not proof of delivery. ADR-0002 documents the upgrade path to the WhatsApp Business Cloud API for delivery receipts.",
-    { x: c4x + 0.18, y: rowY + 1.0, w: c4w - 0.3, h: 2.8,
-      fontFace: FONT, fontSize: 9.5, color: C.slate, valign: "top" }
-  );
-
-  // ---- Flow arrows between the three inline columns ----
-  const arrY = rowY + rowH * 0.5;
-  s.addShape(pptx.ShapeType.line, {
-    x: c1x + boxW, y: arrY, w: gap, h: 0,
-    line: { color: C.slate, width: 1.5, endArrowType: "triangle" },
-  });
-  s.addShape(pptx.ShapeType.line, {
-    x: c2x + boxW, y: arrY, w: gap, h: 0,
-    line: { color: C.slate, width: 1.5, endArrowType: "triangle" },
-  });
-
-  // ---- Bottom band: verification story ----
-  const bY = 6.1;
+  // 2. The Leadway app (centre) — the biggest, most prominent panel
+  const p2x = p1x + p1w + 0.55;
+  const p2w = 5.15;
   s.addShape(pptx.ShapeType.rect, {
-    x: 0.5, y: bY, w: 12.33, h: 0.85,
-    fill: { color: C.irisSoft }, line: { type: "none" }, rectRadius: 0.06,
+    x: p2x, y: topY, w: p2w, h: topH, fill: { color: C.irisSoft },
+    line: { color: C.iris, width: 1.5 }, rectRadius: 0.08,
   });
-  s.addText("Verification lap  ·  every commit that touches app code", {
-    x: 0.7, y: bY + 0.08, w: 12, h: 0.28,
-    fontFace: FONT, fontSize: 10.5, bold: true, color: C.iris, charSpacing: 1,
+  s.addText("LEADWAY  ·  THE APP", {
+    x: p2x + 0.22, y: topY + 0.16, w: p2w - 0.44, h: 0.36,
+    fontFace: FONT, fontSize: 13, bold: true, color: C.iris, charSpacing: 1.5,
+  });
+  const appPoints = [
+    { t: "Shows each person only what they should see", sub: "reps see their own leads · managers see the team" },
+    { t: "Only allows the right next step in the pipeline", sub: "no skipping — one stage forward at a time" },
+    { t: "Scores every lead automatically", sub: "budget, timeline, decision-maker — kept up to date" },
+    { t: "Tells the team what needs attention today", sub: "overdue follow-ups, idle leads, hottest deals" },
+  ];
+  appPoints.forEach((pt, i) => {
+    const y = topY + 0.7 + i * 0.7;
+    s.addShape(pptx.ShapeType.ellipse, {
+      x: p2x + 0.28, y: y + 0.08, w: 0.14, h: 0.14,
+      fill: { color: C.iris }, line: { type: "none" },
+    });
+    s.addText(pt.t, {
+      x: p2x + 0.55, y, w: p2w - 0.7, h: 0.3,
+      fontFace: FONT, fontSize: 12, bold: true, color: C.ink,
+    });
+    s.addText(pt.sub, {
+      x: p2x + 0.55, y: y + 0.3, w: p2w - 0.7, h: 0.28,
+      fontFace: FONT, fontSize: 10, italic: true, color: C.slate,
+    });
+  });
+
+  // 3. The two things the app produces (right): data · WhatsApp
+  const p3x = p2x + p2w + 0.55;
+  const p3w = 13.333 - p3x - 0.5;
+
+  // Top-right — Safe records
+  const trH = 1.75;
+  card(s, { x: p3x, y: topY, w: p3w, h: trH, title: "SAFE RECORDS", accent: C.wn });
+  s.addText("Every action is stored — who did what, when", {
+    x: p3x + 0.2, y: topY + 0.6, w: p3w - 0.35, h: 0.35,
+    fontFace: FONT, fontSize: 11, bold: true, color: C.ink,
   });
   s.addText(
-    "npm test   →  64 unit tests, pure lib modules       npx tsc --noEmit   →  strict type-check clean       npm run build   →  Next.js production build clean",
-    { x: 0.7, y: bY + 0.38, w: 12, h: 0.4,
-      fontFace: FONT, fontSize: 10, color: C.ink, valign: "top" }
+    "The full history of each lead lives in one place — nothing is deleted, so audits and reports always add up.",
+    { x: p3x + 0.2, y: topY + 0.95, w: p3w - 0.35, h: 0.75,
+      fontFace: FONT, fontSize: 10, color: C.slate, valign: "top" }
   );
+
+  // Bottom-right — WhatsApp
+  const brY = topY + trH + 0.2;
+  const brH = topH - trH - 0.2;
+  card(s, { x: p3x, y: brY, w: p3w, h: brH, title: "WHATSAPP, IN ONE TAP", accent: C.qu });
+  s.addText("Opens WhatsApp with the message ready to send", {
+    x: p3x + 0.2, y: brY + 0.6, w: p3w - 0.35, h: 0.35,
+    fontFace: FONT, fontSize: 11, bold: true, color: C.ink,
+  });
+  s.addText(
+    "The lead's name and company drop in automatically. The team never copy-pastes phone numbers — and every contact is recorded in the history.",
+    { x: p3x + 0.2, y: brY + 0.95, w: p3w - 0.35, h: 0.75,
+      fontFace: FONT, fontSize: 10, color: C.slate, valign: "top" }
+  );
+
+  // ---- Flow arrows ----------------------------------------------------------
+  // People → App (thick iris arrow)
+  s.addShape(pptx.ShapeType.line, {
+    x: p1x + p1w + 0.05, y: topY + topH / 2, w: 0.4, h: 0,
+    line: { color: C.iris, width: 3, endArrowType: "triangle" },
+  });
+  // App → Records (top-right)
+  s.addShape(pptx.ShapeType.line, {
+    x: p2x + p2w + 0.05, y: topY + trH * 0.5, w: 0.4, h: 0,
+    line: { color: C.iris, width: 2.5, endArrowType: "triangle" },
+  });
+  // App → WhatsApp (bottom-right)
+  s.addShape(pptx.ShapeType.line, {
+    x: p2x + p2w + 0.05, y: brY + brH * 0.5, w: 0.4, h: 0,
+    line: { color: C.iris, width: 2.5, endArrowType: "triangle" },
+  });
+
+  // ---- Bottom band: three business-relevant benefits (no engineering) -------
+  const bY = 6.05, bH = 1.0;
+  const benefits = [
+    {
+      title: "Fast in the field",
+      body: "Hosted in Singapore — quick to open on any phone or laptop with an internet connection.",
+      accent: C.iris,
+    },
+    {
+      title: "Nothing is lost",
+      body: "Every change is recorded and dated. Later, reports build themselves from that record.",
+      accent: C.wn,
+    },
+    {
+      title: "Works with existing tools",
+      body: "Uses WhatsApp the team already knows — no new app to learn, no new phone number to give customers.",
+      accent: C.qu,
+    },
+  ];
+  const bW = (12.33 - 0.4) / 3;
+  benefits.forEach((b, i) => {
+    const x = 0.5 + i * (bW + 0.2);
+    card(s, { x, y: bY, w: bW, h: bH, title: b.title.toUpperCase(), accent: b.accent });
+    s.addText(b.body, {
+      x: x + 0.2, y: bY + 0.5, w: bW - 0.35, h: 0.5,
+      fontFace: FONT, fontSize: 10, color: C.slate, valign: "top",
+    });
+  });
 }
 
 // ---------------------------------------------------------------------------
