@@ -16,7 +16,8 @@ export type Action =
   | "reopen_lead"
   | "whatsapp_contact"
   | "add_note"
-  | "view_reports";
+  | "view_reports"
+  | "manage_templates";
 
 /** Minimal shapes so this module stays free of Prisma / framework types. */
 export interface ActingUser {
@@ -48,12 +49,14 @@ export function can(user: ActingUser, action: Action, lead?: LeadRef): boolean {
       return isAdmin;
 
     // Manager/Admin only (reports compare reps against each other — a Rep's
-    // personal numbers already live on their own dashboard)
+    // personal numbers already live on their own dashboard; templates are
+    // outbound wording, a management responsibility)
     case "view_all_leads":
     case "delete_lead":
     case "assign_lead":
     case "reopen_lead":
     case "view_reports":
+    case "manage_templates":
       return managerOrAdmin;
 
     // Everyone can create a lead (reps meet prospects in the field)

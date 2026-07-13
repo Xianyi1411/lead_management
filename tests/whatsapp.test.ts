@@ -1,5 +1,14 @@
 import { describe, it, expect } from "vitest";
-import { normalizePhone, fillTemplate, buildWaLink, TEMPLATES } from "@/lib/whatsapp";
+import {
+  normalizePhone,
+  fillTemplate,
+  buildWaLink,
+  TEMPLATES,
+  ALL_ROLES_CSV,
+  parseTemplateRoles,
+  templateAllowedFor,
+  invalidPlaceholders,
+} from "@/lib/whatsapp";
 
 describe("normalizePhone", () => {
   it("strips spaces, dashes and the plus sign", () => {
@@ -32,6 +41,33 @@ describe("fillTemplate", () => {
   it("falls back gracefully when company is missing", () => {
     const out = fillTemplate("Help {company} today", { leadName: "X", repName: "Y" });
     expect(out).toBe("Help your team today");
+  });
+});
+
+describe("template roles (Blueprint §14.9)", () => {
+  it("parses the CSV, dropping unknown entries and whitespace", () => {
+    expect(parseTemplateRoles("ADMIN, MANAGER")).toEqual(["ADMIN", "MANAGER"]);
+    expect(parseTemplateRoles("ADMIN,BOGUS,")).toEqual(["ADMIN"]);
+    expect(parseTemplateRoles(ALL_ROLES_CSV)).toEqual(["ADMIN", "MANAGER", "SALES_REP"]);
+  });
+
+  it("templateAllowedFor honours the CSV", () => {
+    expect(templateAllowedFor("ADMIN,MANAGER", "MANAGER")).toBe(true);
+    expect(templateAllowedFor("ADMIN,MANAGER", "SALES_REP")).toBe(false);
+    expect(templateAllowedFor("", "ADMIN")).toBe(false);
+  });
+});
+
+describe("invalidPlaceholders", () => {
+  it("accepts the three documented placeholders", () => {
+    expect(invalidPlaceholders("Hi {leadName} — {repName} for {company}")).toEqual([]);
+    for (const t of Object.values(TEMPLATES)) {
+      expect(invalidPlaceholders(t.body)).toEqual([]);
+    }
+  });
+
+  it("flags typos that would reach a customer", () => {
+    expect(invalidPlaceholders("Hi {leadname}, meet {rep}")).toEqual(["{leadname}", "{rep}"]);
   });
 });
 

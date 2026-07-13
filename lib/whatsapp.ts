@@ -1,6 +1,12 @@
 // WhatsApp click-to-chat link builder + templates (Blueprint §9/§10, ADR-0002).
 // Pure and unit-tested — see tests/whatsapp.test.ts.
 // The app logs *intent to contact* (a WHATSAPP_CONTACT activity), not delivery.
+//
+// Since Blueprint §14.9 templates live in the MessageTemplate table (editable
+// on /templates, role-scoped); TEMPLATES below is the built-in set the seed
+// loads, kept here so the wording stays under test.
+
+import { ROLES, type Role } from "./domain";
 
 export interface TemplateVars {
   leadName: string;
@@ -27,6 +33,36 @@ export const TEMPLATES: Record<TemplateKey, { label: string; body: string }> = {
       "Hi {leadName}, just checking in on the proposal we sent {company}. Happy to walk you through it whenever suits you.",
   },
 };
+
+/** Every Role, as the CSV stored on a template available to the whole team. */
+export const ALL_ROLES_CSV = ROLES.join(",");
+
+/** Parse a template's roles CSV into valid Role values (unknown entries drop). */
+export function parseTemplateRoles(rolesCsv: string): Role[] {
+  return rolesCsv
+    .split(",")
+    .map((r) => r.trim())
+    .filter((r): r is Role => (ROLES as readonly string[]).includes(r));
+}
+
+/** May `role` use a template whose roles column is `rolesCsv`? */
+export function templateAllowedFor(rolesCsv: string, role: Role): boolean {
+  return parseTemplateRoles(rolesCsv).includes(role);
+}
+
+/**
+ * Placeholders a template body may use. Anything else in {braces} is a typo
+ * that would reach a customer — the editor rejects it.
+ */
+export const TEMPLATE_PLACEHOLDERS = ["leadName", "company", "repName"] as const;
+
+/** Unknown {placeholder} tokens in a body (empty = body is valid). */
+export function invalidPlaceholders(body: string): string[] {
+  const found = body.match(/\{[^{}]*\}/g) ?? [];
+  return found.filter(
+    (token) => !(TEMPLATE_PLACEHOLDERS as readonly string[]).includes(token.slice(1, -1))
+  );
+}
 
 /**
  * Normalise a phone number to the digits wa.me expects (country code + number, no

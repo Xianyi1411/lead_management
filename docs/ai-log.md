@@ -170,3 +170,27 @@ and what a human decided/verified.
   assertion was replaced with a `requireUser()` guard that redirects to /login;
   confirmed over HTTP that a stale session now lands on the login page instead
   of a 500.
+
+## 12 · Exact figures behind the bands + role-scoped editable templates
+
+- **Prompt:** "is it better to change to real budget costing value and the real
+  purchase timeline date would be a better data for analysis? and for the
+  contact whatsapp template, can u create a page to let my user to edit the
+  template, and based on different type of user able to select the template."
+- **Outcome:** the qualification question got a hybrid answer instead of a
+  straight swap — replacing the bands would force fake precision at intake and
+  lose the budget-*confidence* signal, so optional exact fields were added
+  behind them: a customer budget amount that adjusts fit points by deal
+  coverage (covers the deal +5, under half −5), and an expected purchase date
+  that *derives* the timeline band (`timelineFromDate`) so the rep never
+  answers the same fact twice; the stored band is always the effective one.
+  The date's payoff is a new **Pipeline forecast** on Reports (active RM by
+  expected close month, with a "no date" hygiene bucket). WhatsApp templates
+  moved from a code constant into a `MessageTemplate` table with a
+  Manager/Admin **/templates** page (create/edit/delete, placeholder
+  validation that rejects unknown `{tokens}` before they reach a customer) and
+  per-role availability — the lead page's panel shows each user only their
+  role's templates, re-checked server-side in `logWhatsAppContact`. Seeded a
+  Manager-only "Discount approval" template so the role gate demos visibly.
+  10 new unit tests (64 total) across scoring maths and template role/
+  placeholder parsing.

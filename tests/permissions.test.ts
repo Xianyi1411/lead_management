@@ -18,7 +18,7 @@ describe("user management", () => {
 });
 
 describe("Manager/Admin-only lead actions", () => {
-  it.each(["view_all_leads", "delete_lead", "assign_lead", "reopen_lead", "view_reports"] as const)(
+  it.each(["view_all_leads", "delete_lead", "assign_lead", "reopen_lead", "view_reports", "manage_templates"] as const)(
     "%s is allowed for Admin and Manager, denied for Rep",
     (action) => {
       expect(can(admin, action)).toBe(true);

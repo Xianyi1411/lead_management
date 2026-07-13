@@ -2,32 +2,43 @@
 
 import { useState, useTransition } from "react";
 import { logWhatsAppContact } from "@/app/(app)/leads/actions";
-import { TEMPLATES, buildWaLink, fillTemplate, type TemplateKey } from "@/lib/whatsapp";
+import { buildWaLink, fillTemplate } from "@/lib/whatsapp";
+
+export interface PanelTemplate {
+  id: string;
+  label: string;
+  body: string;
+}
 
 // Template picker → editable preview → wa.me deep link. Logs a WHATSAPP_CONTACT
 // activity at click time: intent to contact, not proof of delivery (ADR-0002).
+// Templates come from the MessageTemplate table, already filtered to the
+// viewer's role by the lead page (Blueprint §14.9).
 export default function WhatsAppPanel({
   leadId,
   phone,
   leadName,
   company,
   repName,
+  templates,
 }: {
   leadId: string;
   phone: string;
   leadName: string;
   company: string | null;
   repName: string;
+  templates: PanelTemplate[];
 }) {
   const vars = { leadName: leadName.split(" ")[0], company: company ?? undefined, repName };
-  const [active, setActive] = useState<TemplateKey>("intro");
-  const [message, setMessage] = useState(() => fillTemplate(TEMPLATES.intro.body, vars));
+  const first = templates[0];
+  const [activeId, setActiveId] = useState<string | null>(first?.id ?? null);
+  const [message, setMessage] = useState(() => (first ? fillTemplate(first.body, vars) : ""));
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  function pick(key: TemplateKey) {
-    setActive(key);
-    setMessage(fillTemplate(TEMPLATES[key].body, vars));
+  function pick(t: PanelTemplate) {
+    setActiveId(t.id);
+    setMessage(fillTemplate(t.body, vars));
   }
 
   function openWhatsApp() {
@@ -35,7 +46,7 @@ export default function WhatsAppPanel({
     // Open first (popup blockers require it inside the click), then log intent.
     window.open(buildWaLink(phone, message), "_blank", "noopener");
     startTransition(async () => {
-      const res = await logWhatsAppContact(leadId, active);
+      const res = await logWhatsAppContact(leadId, activeId ?? "");
       if (res?.error) setError(res.error);
     });
   }
@@ -49,20 +60,27 @@ export default function WhatsAppPanel({
         <div className="wa-note">Opens WhatsApp with a pre-filled message and logs the contact.</div>
       </div>
 
-      <div className="tpl-select" role="tablist" aria-label="Message template">
-        {(Object.keys(TEMPLATES) as TemplateKey[]).map((key) => (
-          <button
-            key={key}
-            type="button"
-            role="tab"
-            aria-selected={active === key}
-            className={`tpl${active === key ? " on" : ""}`}
-            onClick={() => pick(key)}
-          >
-            {TEMPLATES[key].label}
-          </button>
-        ))}
-      </div>
+      {templates.length === 0 ? (
+        <div style={{ color: "var(--slate)", fontSize: 13, margin: "14px 0 12px" }}>
+          No templates are available for your role — write the message below, or ask a
+          Manager to add templates.
+        </div>
+      ) : (
+        <div className="tpl-select" role="tablist" aria-label="Message template">
+          {templates.map((t) => (
+            <button
+              key={t.id}
+              type="button"
+              role="tab"
+              aria-selected={activeId === t.id}
+              className={`tpl${activeId === t.id ? " on" : ""}`}
+              onClick={() => pick(t)}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+      )}
 
       <textarea
         className="wa-preview"
@@ -75,7 +93,12 @@ export default function WhatsAppPanel({
 
       <div className="wa-foot">
         <small>Logs a WhatsApp Contact — intent to contact, not proof of delivery.</small>
-        <button type="button" className="btn btn-wa" onClick={openWhatsApp} disabled={pending}>
+        <button
+          type="button"
+          className="btn btn-wa"
+          onClick={openWhatsApp}
+          disabled={pending || message.trim().length === 0}
+        >
           {pending ? "Logging…" : "Open WhatsApp"}
         </button>
       </div>

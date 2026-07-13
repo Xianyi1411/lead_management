@@ -18,6 +18,7 @@ import {
   type LeadStatus,
 } from "@/lib/domain";
 import { qualificationScore, qualificationVerdict, VERDICT_LABELS } from "@/lib/scoring";
+import { templateAllowedFor } from "@/lib/whatsapp";
 import { formatRM, relativeTime } from "@/lib/format";
 import Topbar from "@/components/Topbar";
 import StatusPill from "@/components/StatusPill";
@@ -75,7 +76,7 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
     if (hit) priorStatus = hit[0] as LeadStatus;
   }
 
-  const [reps, customSources] = await Promise.all([
+  const [reps, customSources, allTemplates] = await Promise.all([
     canAssign
       ? prisma.user.findMany({
           where: { role: "SALES_REP", isActive: true },
@@ -88,7 +89,18 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
           .findMany({ select: { name: true }, orderBy: { name: "asc" } })
           .then((rows) => rows.map((r) => r.name))
       : Promise.resolve([] as string[]),
+    canWork
+      ? prisma.messageTemplate.findMany({
+          select: { id: true, label: true, body: true, roles: true },
+          orderBy: { createdAt: "asc" },
+        })
+      : Promise.resolve([]),
   ]);
+
+  // Each user sees only the templates their role may send (Blueprint §14.9).
+  const templates = allTemplates
+    .filter((t) => templateAllowedFor(t.roles, user.role))
+    .map(({ id, label, body }) => ({ id, label, body }));
 
   // Fit score from the stored qualification facts (same rule as the intake gate).
   const fit = qualificationScore({
@@ -97,6 +109,8 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
     timeline: isTimeline(lead.timeline) ? lead.timeline : "UNKNOWN",
     source: lead.source,
     dealValue: lead.dealValue,
+    budgetAmount: lead.budgetAmount,
+    expectedCloseAt: lead.expectedCloseAt,
   });
   const fitVerdict = VERDICT_LABELS[qualificationVerdict(fit)];
 
@@ -134,6 +148,10 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                   budgetStatus: lead.budgetStatus,
                   authority: lead.authority,
                   timeline: lead.timeline,
+                  budgetAmount: lead.budgetAmount,
+                  expectedClose: lead.expectedCloseAt
+                    ? lead.expectedCloseAt.toISOString().slice(0, 10)
+                    : "",
                 }}
                 customSources={customSources}
               />
@@ -163,10 +181,24 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                 </dd>
                 <dt>Budget</dt>
                 <dd>{isBudgetStatus(lead.budgetStatus) ? BUDGET_LABELS[lead.budgetStatus] : "—"}</dd>
+                {lead.budgetAmount !== null && (
+                  <>
+                    <dt>Customer&apos;s budget</dt>
+                    <dd className="tnum">{formatRM(lead.budgetAmount)}</dd>
+                  </>
+                )}
                 <dt>Contact&apos;s role</dt>
                 <dd>{isAuthority(lead.authority) ? AUTHORITY_LABELS[lead.authority] : "—"}</dd>
                 <dt>Timeline</dt>
                 <dd>{isTimeline(lead.timeline) ? TIMELINE_LABELS[lead.timeline] : "—"}</dd>
+                {lead.expectedCloseAt && (
+                  <>
+                    <dt>Expected purchase</dt>
+                    <dd>
+                      {lead.expectedCloseAt.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" })}
+                    </dd>
+                  </>
+                )}
                 {status === "LOST" && lead.lostReason && isLostReason(lead.lostReason) && (
                   <>
                     <dt>Lost because</dt>
@@ -269,6 +301,7 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                   leadName={lead.name}
                   company={lead.company}
                   repName={user.name}
+                  templates={templates}
                 />
               ) : (
                 <div style={{ color: "var(--slate)", fontSize: 13 }}>

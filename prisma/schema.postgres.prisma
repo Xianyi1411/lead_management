@@ -45,6 +45,11 @@ model Lead {
   budgetStatus String   @default("UNKNOWN") // BudgetStatus: CONFIRMED | LIKELY | UNKNOWN | NONE
   authority    String   @default("UNKNOWN") // Authority: DECISION_MAKER | INFLUENCER | UNKNOWN
   timeline     String   @default("UNKNOWN") // Timeline: IMMEDIATE | THIS_QUARTER | THIS_YEAR | UNKNOWN
+  // Optional exact figures behind the bands (Blueprint §14.8): the customer's
+  // stated budget in RM, and the expected purchase date. When the date is set,
+  // `timeline` is derived from it server-side; the band is never asked twice.
+  budgetAmount    Int?
+  expectedCloseAt DateTime?
   // Working-the-lead fields
   nextFollowUpAt DateTime? // when the next touch is due; overdue = attention needed
   lostReason     String?   // LostReason — set when status becomes LOST, cleared on reopen
@@ -83,4 +88,17 @@ model CustomSource {
   id        String   @id @default(cuid())
   name      String   @unique
   createdAt DateTime @default(now())
+}
+
+// Editable WhatsApp message templates (Blueprint §14.9). Managers/Admins manage
+// them on /templates; each template declares which Roles may use it (CSV of
+// Role values — kept String for model parity with the SQLite schema), so the
+// WhatsApp panel shows each user only their templates.
+model MessageTemplate {
+  id        String   @id @default(cuid())
+  label     String   @unique
+  body      String
+  roles     String // CSV of Role values, e.g. "ADMIN,MANAGER,SALES_REP"
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }

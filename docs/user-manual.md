@@ -45,7 +45,11 @@ under the dropdown, type the name (e.g. "Google Ads"), and it's registered for
 the whole team — it appears in the Source filter and all Source analytics from
 then on. Then answer the three
 **Qualification** questions: does the lead have **budget**, is your contact the
-**decision maker**, and what's their **purchase timeline**? A **Fit Score**
+**decision maker**, and what's their **purchase timeline**? If you know the
+exact figures, capture them too — the **customer's budget (RM)** (a budget that
+covers the deal scores higher; one under half the deal is flagged down) and the
+**expected purchase date** (when set, the timeline is worked out from the date
+automatically — you never answer it twice). A **Fit Score**
 (0–100) updates live as you answer, with a plain recommendation: *Strong fit* —
 add and prioritise; *Medium fit* — add, but confirm budget/timeline early;
 *Low fit* — consider parking it instead of spending calls on it. The score
@@ -76,11 +80,13 @@ long it's been quiet. The **Focus** filter on the Leads page narrows to
 *Overdue follow-up*, *Due today*, *Idle 7+ days*, or *Hot leads* — that's your
 morning worklist.
 
-**Contact via WhatsApp** — pick a Message Template (Intro, Follow-up, Proposal
-follow-up), edit the preview text if you like, then **Open WhatsApp**. The app
-opens WhatsApp with the message pre-filled and records a **WhatsApp Contact** in
-the Activity timeline. Note: this logs your *intent to contact* at click time —
-it does not confirm the message was sent or delivered.
+**Contact via WhatsApp** — pick a Message Template, edit the preview text if
+you like, then **Open WhatsApp**. The app opens WhatsApp with the message
+pre-filled and records a **WhatsApp Contact** in the Activity timeline. The
+template chips you see depend on your role — Managers/Admins may have templates
+Reps don't (they're managed on the **Templates** page). Note: this logs your
+*intent to contact* at click time — it does not confirm the message was sent or
+delivered.
 
 **Add a note** — type into *"Add a note to the timeline…"* in the Activity panel.
 Notes are permanent timeline entries (who, what, when).
@@ -123,9 +129,21 @@ returns to where it fell out of the funnel). Your Dashboard is team-wide.
 - **Monthly outcomes** — won vs lost RM per month, dated by when the Lead actually
   closed.
 
+- **Pipeline forecast** — active-Lead value by expected purchase date: this
+  month, the next two, later, and a "no date" bucket (that last bar is your
+  hygiene nudge — chase the team to capture dates).
+
 The Dashboard's **Velocity** strip (all roles) reads the same history: average
 days a Lead spends in each Status and the percentage that advances to the next —
 the slowest stage with the lowest advance rate is where the funnel leaks.
+
+**Templates** (Managers and Admins only) — the Templates page in the left rail
+manages the WhatsApp messages the team sends: add, edit, or delete a template,
+and tick which roles can use it (e.g. keep a "Discount approval" message
+Manager-only). Placeholders `{leadName}`, `{company}`, `{repName}` fill in
+automatically from the lead; anything else in braces is rejected so a typo
+never reaches a customer. Deleting a template doesn't change past timeline
+entries.
 
 **A typical flow:** a new Lead arrives unassigned → open it → assign to a Rep →
 track it through the team Dashboard; step in to reopen or delete when needed.

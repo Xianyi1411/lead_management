@@ -18,6 +18,7 @@ import {
 import {
   qualificationScore,
   qualificationVerdict,
+  timelineFromDate,
   VERDICT_LABELS,
   VERDICT_GUIDANCE,
   type Verdict,
@@ -34,6 +35,10 @@ const VERDICT_COLOR: Record<Verdict, { bar: string; text: string }> = {
 // source + deal value, so the team sees whether a lead is worth adding BEFORE
 // spending calls and follow-ups on it. The score advises; the human decides —
 // submitting is never blocked.
+//
+// Exact figures beat the bands (Blueprint §14.8): an optional customer budget
+// (RM) adjusts the budget points by coverage, and an optional expected purchase
+// date replaces the hand-picked timeline entirely.
 export default function QualificationIntake({
   idPrefix,
   source,
@@ -41,6 +46,8 @@ export default function QualificationIntake({
   defaultBudget = "UNKNOWN",
   defaultAuthority = "UNKNOWN",
   defaultTimeline = "UNKNOWN",
+  defaultBudgetAmount = null,
+  defaultExpectedClose = "",
 }: {
   idPrefix: string;
   source: string;
@@ -48,10 +55,20 @@ export default function QualificationIntake({
   defaultBudget?: string;
   defaultAuthority?: string;
   defaultTimeline?: string;
+  defaultBudgetAmount?: number | null;
+  /** yyyy-mm-dd or "" */
+  defaultExpectedClose?: string;
 }) {
   const [budget, setBudget] = useState(defaultBudget);
   const [authority, setAuthority] = useState(defaultAuthority);
   const [timeline, setTimeline] = useState(defaultTimeline);
+  const [budgetAmount, setBudgetAmount] = useState<number | null>(defaultBudgetAmount);
+  const [expectedClose, setExpectedClose] = useState(defaultExpectedClose);
+
+  const now = new Date();
+  const closeDate = expectedClose ? new Date(`${expectedClose}T12:00:00`) : null;
+  const derivedTimeline =
+    closeDate && !Number.isNaN(closeDate.getTime()) ? timelineFromDate(closeDate, now) : null;
 
   const input = {
     budgetStatus: isBudgetStatus(budget) ? budget : ("UNKNOWN" as BudgetStatus),
@@ -59,6 +76,9 @@ export default function QualificationIntake({
     timeline: isTimeline(timeline) ? timeline : ("UNKNOWN" as Timeline),
     source, // built-in code or custom name — lib/scoring.ts handles both
     dealValue: Number.isFinite(dealValue) ? Math.max(0, dealValue) : 0,
+    budgetAmount,
+    expectedCloseAt: derivedTimeline ? closeDate : null,
+    now,
   };
   const score = qualificationScore(input);
   const verdict = qualificationVerdict(score);
@@ -78,6 +98,22 @@ export default function QualificationIntake({
           />
         </div>
         <div className="field">
+          <label htmlFor={`${idPrefix}-budgetAmount`}>Customer&apos;s budget (RM)</label>
+          <input
+            id={`${idPrefix}-budgetAmount`}
+            name="budgetAmount"
+            type="number"
+            min={0}
+            step={500}
+            placeholder="If stated (optional)"
+            defaultValue={defaultBudgetAmount ?? ""}
+            onChange={(e) => {
+              const v = e.target.value.trim();
+              setBudgetAmount(v === "" ? null : Math.max(0, Number(v)));
+            }}
+          />
+        </div>
+        <div className="field">
           <label htmlFor={`${idPrefix}-authority`}>Contact&apos;s role</label>
           <Dropdown
             id={`${idPrefix}-authority`}
@@ -87,15 +123,31 @@ export default function QualificationIntake({
             options={AUTHORITY_LEVELS.map((a) => ({ value: a, label: AUTHORITY_LABELS[a] }))}
           />
         </div>
+        <div className="field">
+          <label htmlFor={`${idPrefix}-expectedClose`}>Expected purchase date</label>
+          <input
+            id={`${idPrefix}-expectedClose`}
+            name="expectedCloseAt"
+            type="date"
+            defaultValue={defaultExpectedClose}
+            onChange={(e) => setExpectedClose(e.target.value)}
+          />
+        </div>
         <div className="field full">
           <label htmlFor={`${idPrefix}-timeline`}>Purchase timeline</label>
-          <Dropdown
-            id={`${idPrefix}-timeline`}
-            name="timeline"
-            defaultValue={defaultTimeline}
-            onChange={setTimeline}
-            options={TIMELINES.map((t) => ({ value: t, label: TIMELINE_LABELS[t] }))}
-          />
+          {derivedTimeline ? (
+            <div className="derived-note">
+              Counts as <b>{TIMELINE_LABELS[derivedTimeline]}</b> — taken from the exact date above.
+            </div>
+          ) : (
+            <Dropdown
+              id={`${idPrefix}-timeline`}
+              name="timeline"
+              defaultValue={defaultTimeline}
+              onChange={setTimeline}
+              options={TIMELINES.map((t) => ({ value: t, label: TIMELINE_LABELS[t] }))}
+            />
+          )}
         </div>
       </div>
 

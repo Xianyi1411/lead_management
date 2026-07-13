@@ -11,6 +11,7 @@
 
 import { PrismaClient } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { TEMPLATES, ALL_ROLES_CSV } from "../lib/whatsapp";
 
 const prisma = new PrismaClient();
 
@@ -25,9 +26,27 @@ async function main() {
   await prisma.lead.deleteMany();
   await prisma.user.deleteMany();
   await prisma.customSource.deleteMany();
+  await prisma.messageTemplate.deleteMany();
 
   // One team-added source so the extensible-source flow demos populated
   await prisma.customSource.create({ data: { name: "Google Ads" } });
+
+  // WhatsApp templates (Blueprint §14.9): the three built-ins for everyone,
+  // plus one management-only template so the role gate demos visibly —
+  // a Rep sees three chips, a Manager sees four.
+  for (const t of Object.values(TEMPLATES)) {
+    await prisma.messageTemplate.create({
+      data: { label: t.label, body: t.body, roles: ALL_ROLES_CSV },
+    });
+  }
+  await prisma.messageTemplate.create({
+    data: {
+      label: "Discount approval",
+      body:
+        "Hi {leadName}, good news — I've approved a special rate for {company}. I'd love to close this together: when are you free today?",
+      roles: "ADMIN,MANAGER",
+    },
+  });
 
   const admin = await prisma.user.create({
     data: { name: "Aina Zahra", email: "aina@company.my", passwordHash, role: "ADMIN" },
@@ -55,6 +74,9 @@ async function main() {
     budgetStatus?: string;
     authority?: string;
     timeline?: string;
+    /** exact figures behind the bands (§14.8) */
+    budgetAmount?: number;
+    expectedCloseInDays?: number;
     /** days from now (negative = overdue, 0 = today) */
     followUpInDays?: number;
     lostReason?: string;
@@ -70,6 +92,7 @@ async function main() {
       company: "Petronas SB", source: "REFERRAL", status: "QUALIFIED", dealValue: 48000,
       assignedTo: huiting,
       budgetStatus: "LIKELY", authority: "DECISION_MAKER", timeline: "THIS_QUARTER",
+      budgetAmount: 50000, expectedCloseInDays: 45,
       followUpInDays: 1,
       createdDaysAgo: 14,
       activities: [
@@ -97,6 +120,7 @@ async function main() {
       company: "Maybank", source: "EVENT", status: "PROPOSAL", dealValue: 90000,
       assignedTo: farid,
       budgetStatus: "CONFIRMED", authority: "DECISION_MAKER", timeline: "IMMEDIATE",
+      budgetAmount: 100000, expectedCloseInDays: 9, // covers the deal, closing this month
       followUpInDays: -2, // overdue — the demo's "needs attention" star
       createdDaysAgo: 24,
       activities: [
@@ -127,6 +151,7 @@ async function main() {
       company: "Sunway Group", source: "SOCIAL_MEDIA", status: "PROPOSAL", dealValue: 64500,
       assignedTo: farid,
       budgetStatus: "LIKELY", authority: "INFLUENCER", timeline: "THIS_QUARTER",
+      budgetAmount: 25000, expectedCloseInDays: 75, // stated budget under half the deal — risk
       followUpInDays: 3,
       createdDaysAgo: 30,
       activities: [
@@ -256,7 +281,8 @@ async function main() {
       name: "Lim Xin Yi", phone: "+60 16-334 5521", email: "xinyi@klangparts.my",
       company: "Klang Auto Parts", source: "Google Ads", status: "CONTACTED", dealValue: 18000,
       assignedTo: farid,
-      budgetStatus: "LIKELY", authority: "DECISION_MAKER", timeline: "THIS_QUARTER",
+      budgetStatus: "LIKELY", authority: "DECISION_MAKER", timeline: "IMMEDIATE",
+      budgetAmount: 20000, expectedCloseInDays: 20,
       followUpInDays: 4,
       createdDaysAgo: 5,
       activities: [
@@ -302,6 +328,9 @@ async function main() {
         budgetStatus: l.budgetStatus ?? "UNKNOWN",
         authority: l.authority ?? "UNKNOWN",
         timeline: l.timeline ?? "UNKNOWN",
+        budgetAmount: l.budgetAmount ?? null,
+        expectedCloseAt:
+          l.expectedCloseInDays === undefined ? null : new Date(now + l.expectedCloseInDays * DAY),
         nextFollowUpAt: followUp,
         lostReason: l.lostReason ?? null,
         assignedToId: l.assignedTo ? l.assignedTo.id : null,

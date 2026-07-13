@@ -5,6 +5,9 @@ import {
   qualificationVerdict,
   dealValuePoints,
   sourcePoints,
+  budgetPoints,
+  timelineFromDate,
+  effectiveTimeline,
   temperatureScore,
   temperature,
   recencyPenalty,
@@ -57,6 +60,51 @@ describe("fit score", () => {
     expect(dealValuePoints(20_000)).toBe(6);
     expect(dealValuePoints(50_000)).toBe(8);
     expect(dealValuePoints(100_000)).toBe(10);
+  });
+});
+
+describe("exact figures behind the bands (Blueprint §14.8)", () => {
+  it("a stated budget covering the deal earns +5, capped at 30", () => {
+    expect(budgetPoints("LIKELY", 60_000, 50_000)).toBe(25);
+    expect(budgetPoints("CONFIRMED", 60_000, 50_000)).toBe(30); // already max
+  });
+
+  it("a stated budget under half the deal costs 5, floored at 0", () => {
+    expect(budgetPoints("LIKELY", 20_000, 50_000)).toBe(15);
+    expect(budgetPoints("NONE", 20_000, 50_000)).toBe(0);
+  });
+
+  it("between half and full it neither helps nor hurts; no amount = the band alone", () => {
+    expect(budgetPoints("LIKELY", 30_000, 50_000)).toBe(20);
+    expect(budgetPoints("LIKELY", null, 50_000)).toBe(20);
+    expect(budgetPoints("LIKELY", 60_000, 0)).toBe(20); // no deal value to compare
+  });
+
+  const now = new Date("2026-07-13T12:00:00Z");
+  const inDays = (d: number) => new Date(now.getTime() + d * 86_400_000);
+
+  it("timelineFromDate maps days-out to the bands", () => {
+    expect(timelineFromDate(inDays(10), now)).toBe("IMMEDIATE");
+    expect(timelineFromDate(inDays(-3), now)).toBe("IMMEDIATE"); // already due
+    expect(timelineFromDate(inDays(60), now)).toBe("THIS_QUARTER");
+    expect(timelineFromDate(inDays(200), now)).toBe("THIS_YEAR");
+    expect(timelineFromDate(inDays(400), now)).toBe("UNKNOWN"); // >1y = no near-term timeline
+  });
+
+  it("an exact date always beats the hand-picked band", () => {
+    expect(effectiveTimeline("UNKNOWN", inDays(10), now)).toBe("IMMEDIATE");
+    expect(effectiveTimeline("IMMEDIATE", null, now)).toBe("IMMEDIATE");
+    // full score path: weakest bands + exact figures = scored on the figures
+    const score = qualificationScore({
+      ...weakest,
+      budgetStatus: "LIKELY",
+      budgetAmount: 10_000,
+      dealValue: 8_000,
+      expectedCloseAt: inDays(14),
+      now,
+    });
+    // budget 20+5=25, authority 8, timeline IMMEDIATE 25, source OTHER 2, deal 4
+    expect(score).toBe(64);
   });
 });
 

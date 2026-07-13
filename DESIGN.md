@@ -357,6 +357,16 @@ error states for each surface.
   under the Source dropdown ("+ Add a new source") expands to input + Add/Cancel
   ghost buttons; the registered name is selected immediately. Link-level, not a
   button — extending a picklist is a secondary act, never competing with the form.
+- **Exact-figure fields** (qualification section). Customer budget (RM) and
+  expected purchase date sit beside their bands as optional inputs. When a date
+  is set, the timeline dropdown is *replaced* by a `.derived-note` (dashed
+  mist box: "Counts as **This quarter** — taken from the exact date above") —
+  the user is never asked the same fact twice.
+- **Templates page** (Manager/Admin). The leads-table pattern: label, body
+  (muted, max-width), role tags (neutral pills), relative updated time, and
+  compact row actions (Edit dialog + two-step Delete in Lost rose). Role
+  selection in the dialog uses checkbox chips that light iris when ticked —
+  same active grammar as the filter bar.
 - **Lost-reason step** (Advance status card). "Mark Lost" now reveals a chip row
   (the WhatsApp template-chip pattern; selected chip goes Lost rose) + Confirm/Cancel.
   Confirm stays disabled until a reason is picked.

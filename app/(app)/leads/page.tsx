@@ -97,6 +97,8 @@ export default async function LeadsPage({ searchParams }: { searchParams: Filter
       budgetStatus: true,
       authority: true,
       timeline: true,
+      budgetAmount: true,
+      expectedCloseAt: true,
       nextFollowUpAt: true,
       updatedAt: true,
       assignedTo: { select: { name: true } },
@@ -114,6 +116,9 @@ export default async function LeadsPage({ searchParams }: { searchParams: Filter
       timeline: isTimeline(l.timeline) ? l.timeline : "UNKNOWN",
       source: l.source,
       dealValue: l.dealValue,
+      budgetAmount: l.budgetAmount,
+      expectedCloseAt: l.expectedCloseAt,
+      now,
     });
     const temp = temperatureScore({
       fitScore: fit,

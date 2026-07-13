@@ -59,6 +59,8 @@ export default async function DashboardPage() {
       budgetStatus: true,
       authority: true,
       timeline: true,
+      budgetAmount: true,
+      expectedCloseAt: true,
       nextFollowUpAt: true,
       createdAt: true,
       updatedAt: true,
@@ -136,6 +138,9 @@ export default async function DashboardPage() {
       timeline: isTimeline(l.timeline) ? l.timeline : "UNKNOWN",
       source: l.source,
       dealValue: l.dealValue,
+      budgetAmount: l.budgetAmount,
+      expectedCloseAt: l.expectedCloseAt,
+      now,
     });
     const lastActivityAt = l.activities[l.activities.length - 1]?.createdAt ?? null;
     const temp = temperatureScore({

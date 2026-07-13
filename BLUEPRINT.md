@@ -136,6 +136,13 @@ Relationships:
 CustomSource (§14.7): id PK · name (unique) · createdAt — team-added sources;
 Lead.source stores a built-in code or a CustomSource name (validated in the
 server actions, no FK so the six built-ins need no rows).
+
+MessageTemplate (§14.9): id PK · label (unique) · body · roles (CSV of Role) ·
+createdAt / updatedAt — editable WhatsApp templates; the roles column decides
+which users may send each one.
+
+Lead also carries §14.8's exact figures: budgetAmount (Int?, RM) and
+expectedCloseAt (DateTime?).
 ```
 
 **Enums**
@@ -345,3 +352,21 @@ pure tested `lib/` modules, Activity audit rows). Detail: ADR-0003 and the
    flow through the source filter, dashboard breakdown, and won-value-by-source
    report, and score a neutral 5/10 in the fit rule until the win/loss data
    says otherwise.
+8. **Exact figures behind the bands.** Optional `budgetAmount` (the customer's
+   stated budget, RM) and `expectedCloseAt` (expected purchase date) sit behind
+   the qualification bands. The bands stay for when reps genuinely don't know —
+   forcing precision at intake produces fake data — but exact figures win when
+   captured: a budget covering the deal is +5 fit points (under half = −5), and
+   a date *replaces* the hand-picked timeline entirely (`timelineFromDate`:
+   ≤31d Immediate, ≤92d This quarter, ≤366d This year). The stored `timeline`
+   is always the effective one. Payoff: the Reports screen gains a **Pipeline
+   forecast** — active-lead RM by expected close month (+ Later / No date).
+9. **Editable, role-scoped WhatsApp templates.** Templates moved from a code
+   constant into a `MessageTemplate` table (label unique, body, roles CSV).
+   Managers/Admins manage them on **/templates** (`manage_templates`
+   permission): create, edit, delete, with placeholder validation (only
+   `{leadName} {company} {repName}`; typos are rejected before they reach a
+   customer) and per-role availability checkboxes. The lead page's WhatsApp
+   panel shows each user only their role's templates; `logWhatsAppContact`
+   re-checks the role server-side. Deleting a template never rewrites past
+   activities — the timeline stores the label as text.

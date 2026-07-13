@@ -37,6 +37,7 @@ export default async function ReportsPage() {
         source: true,
         dealValue: true,
         lostReason: true,
+        expectedCloseAt: true,
         assignedToId: true,
         createdAt: true,
         activities: {
@@ -131,6 +132,36 @@ export default async function ReportsPage() {
     })
     .sort((a, b) => b.value - a.value);
   const maxSourceValue = Math.max(1, ...sourceValue.map((x) => x.value));
+
+  // ---- pipeline forecast (active leads by expected purchase date, §14.8) ----
+  const activeLeads = leads.filter((l) => isActive(l.status));
+  const forecast: { label: string; value: number; count: number }[] = [];
+  for (let i = 0; i < 3; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+    const next = new Date(now.getFullYear(), now.getMonth() + i + 1, 1);
+    const bucket = activeLeads.filter(
+      (l) => l.expectedCloseAt && l.expectedCloseAt >= d && l.expectedCloseAt < next
+    );
+    forecast.push({
+      label: i === 0 ? "This month" : MONTH_FMT.format(d),
+      value: bucket.reduce((s, l) => s + Number(l.dealValue), 0),
+      count: bucket.length,
+    });
+  }
+  const horizon = new Date(now.getFullYear(), now.getMonth() + 3, 1);
+  const later = activeLeads.filter((l) => l.expectedCloseAt && l.expectedCloseAt >= horizon);
+  forecast.push({
+    label: "Later",
+    value: later.reduce((s, l) => s + Number(l.dealValue), 0),
+    count: later.length,
+  });
+  const noDate = activeLeads.filter((l) => !l.expectedCloseAt);
+  forecast.push({
+    label: "No date",
+    value: noDate.reduce((s, l) => s + Number(l.dealValue), 0),
+    count: noDate.length,
+  });
+  const maxForecast = Math.max(1, ...forecast.map((f) => f.value));
 
   // ---- monthly outcomes (last 6 months, dated by the Won/Lost transition) ----
   const months: { key: string; label: string; wonValue: number; wonCount: number; lostValue: number; lostCount: number }[] = [];
@@ -276,6 +307,31 @@ export default async function ReportsPage() {
               )}
             </div>
           </div>
+        </div>
+
+        {/* pipeline forecast */}
+        <div className="section-head">
+          <h2>Pipeline forecast</h2>
+          <span className="hint">active leads by expected purchase date</span>
+        </div>
+        <div className="pipeline">
+          {forecast.every((f) => f.count === 0) ? (
+            <div style={{ color: "var(--slate)", fontSize: 13 }}>
+              No active leads yet. Set expected purchase dates on leads and the forecast builds itself.
+            </div>
+          ) : (
+            forecast.map((f) => (
+              <div className="srcrow src-wide" key={f.label}>
+                <div className="name">{f.label}</div>
+                <div className="track">
+                  <i style={{ width: `${(f.value / maxForecast) * 100}%` }} />
+                </div>
+                <div className="c tnum">
+                  {f.count > 0 ? `RM ${formatNumber(f.value)} · ${f.count}` : "—"}
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         {/* monthly outcomes */}

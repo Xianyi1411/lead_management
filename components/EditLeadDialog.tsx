@@ -29,6 +29,9 @@ export interface EditableLead {
   budgetStatus: string;
   authority: string;
   timeline: string;
+  budgetAmount: number | null;
+  /** yyyy-mm-dd or "" */
+  expectedClose: string;
 }
 
 // "Edit lead" button + centered dialog, matching the New lead / Add user pattern.
@@ -126,6 +129,8 @@ export default function EditLeadDialog({
             defaultBudget={lead.budgetStatus}
             defaultAuthority={lead.authority}
             defaultTimeline={lead.timeline}
+            defaultBudgetAmount={lead.budgetAmount}
+            defaultExpectedClose={lead.expectedClose}
           />
 
           <div className="form-actions">

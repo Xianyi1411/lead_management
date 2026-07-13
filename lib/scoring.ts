@@ -35,6 +35,11 @@ export interface QualificationInput {
   /** a built-in LeadSource code or a team-added custom source name */
   source: string;
   dealValue: number; // RM
+  /** optional exact figures behind the bands (Blueprint §14.8) */
+  budgetAmount?: number | null; // the customer's stated budget, RM
+  expectedCloseAt?: Date | null; // expected purchase date
+  /** reference time for date-derived timeline; defaults to now */
+  now?: Date;
 }
 
 /** One scored dimension, for the "why this score" breakdown in the UI. */
@@ -50,6 +55,46 @@ const BUDGET_POINTS: Record<BudgetStatus, number> = {
   UNKNOWN: 8,
   NONE: 0,
 };
+
+/**
+ * Budget points, adjusted by the exact amount when the team captured one:
+ * a stated budget that covers the deal is worth +5 (capped at 30); one under
+ * half the deal is a real risk, −5 (floored at 0). No amount = the band alone.
+ */
+export function budgetPoints(
+  status: BudgetStatus,
+  budgetAmount: number | null | undefined,
+  dealValue: number
+): number {
+  const base = BUDGET_POINTS[status];
+  if (budgetAmount == null || budgetAmount <= 0 || dealValue <= 0) return base;
+  if (budgetAmount >= dealValue) return Math.min(30, base + 5);
+  if (budgetAmount < dealValue / 2) return Math.max(0, base - 5);
+  return base;
+}
+
+/**
+ * Timeline band derived from an exact expected purchase date: ≤31 days out
+ * (or already past) = IMMEDIATE, ≤92 days = THIS_QUARTER, ≤366 days =
+ * THIS_YEAR, further = UNKNOWN (a date over a year away is no near-term
+ * timeline). The exact date always beats the hand-picked band.
+ */
+export function timelineFromDate(expectedCloseAt: Date, now: Date): Timeline {
+  const days = (expectedCloseAt.getTime() - now.getTime()) / 86_400_000;
+  if (days <= 31) return "IMMEDIATE";
+  if (days <= 92) return "THIS_QUARTER";
+  if (days <= 366) return "THIS_YEAR";
+  return "UNKNOWN";
+}
+
+/** The band that actually counts: date-derived when a date exists, else as picked. */
+export function effectiveTimeline(
+  timeline: Timeline,
+  expectedCloseAt: Date | null | undefined,
+  now: Date
+): Timeline {
+  return expectedCloseAt ? timelineFromDate(expectedCloseAt, now) : timeline;
+}
 
 const AUTHORITY_POINTS: Record<Authority, number> = {
   DECISION_MAKER: 25,
@@ -93,10 +138,12 @@ export function dealValuePoints(valueRM: number): number {
 
 /** The score broken into its five dimensions (sums to qualificationScore). */
 export function qualificationParts(input: QualificationInput): ScorePart[] {
+  const now = input.now ?? new Date();
+  const timeline = effectiveTimeline(input.timeline, input.expectedCloseAt, now);
   return [
-    { label: "Budget", points: BUDGET_POINTS[input.budgetStatus], max: 30 },
+    { label: "Budget", points: budgetPoints(input.budgetStatus, input.budgetAmount, input.dealValue), max: 30 },
     { label: "Authority", points: AUTHORITY_POINTS[input.authority], max: 25 },
-    { label: "Timeline", points: TIMELINE_POINTS[input.timeline], max: 25 },
+    { label: "Timeline", points: TIMELINE_POINTS[timeline], max: 25 },
     { label: "Source", points: sourcePoints(input.source), max: 10 },
     { label: "Deal size", points: dealValuePoints(input.dealValue), max: 10 },
   ];

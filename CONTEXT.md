@@ -87,13 +87,13 @@ The chronological timeline of all Activities for one Lead. Doubles as the audit 
 _Avoid_: History, audit log (as separate concepts — they are the same thing here)
 
 **Message Template**:
-One of a small fixed set of predefined WhatsApp message texts (Introduction, Follow-up, Proposal follow-up) with placeholders for the Lead's name, company, and the sending User's name. The user picks one, may edit the preview, then opens WhatsApp.
+A predefined WhatsApp message text with placeholders for the Lead's name, company, and the sending User's name. Templates are managed by Managers/Admins on the Templates page (create, edit, delete) and each declares which Roles may use it — a User only sees their Role's templates in the WhatsApp panel. The user picks one, may edit the preview, then opens WhatsApp. Three built-ins ship by default: Introduction, Follow-up, Proposal follow-up.
 _Avoid_: Canned message, script
 
 ### Qualification & scoring
 
 **Qualification**:
-The three BANT-style facts captured when a Lead is added (and editable later): Budget (confirmed / likely / not sure / none), the contact's Authority (decision maker / influencer / not sure), and the purchase Timeline (within a month / this quarter / this year / none yet).
+The three BANT-style facts captured when a Lead is added (and editable later): Budget (confirmed / likely / not sure / none), the contact's Authority (decision maker / influencer / not sure), and the purchase Timeline (within a month / this quarter / this year / none yet). Two optional exact figures sit behind the bands: the customer's stated **budget amount** (RM) and the **expected purchase date** — when the date is known it replaces the hand-picked Timeline entirely.
 _Avoid_: Lead form extras, survey
 
 **Fit Score**:
@@ -131,7 +131,10 @@ _Avoid_: Speed, throughput
 Hours between a Lead's Assignment and the assigned Sales Rep's first recorded touch on it (WhatsApp Contact, note, or Status change). Reported per Sales Rep.
 
 **Reports**:
-The Manager/Admin-only analytics screen: per-Rep performance (open Leads, pipeline, won, win rate, First Response Time), lost-reason breakdown, won value by Source, and monthly Won/Lost outcomes.
+The Manager/Admin-only analytics screen: per-Rep performance (open Leads, pipeline, won, win rate, First Response Time), lost-reason breakdown, won value by Source, the Pipeline Forecast, and monthly Won/Lost outcomes.
+
+**Pipeline Forecast**:
+Active-Lead Deal Value grouped by expected purchase date — this month, the next two months, later, and a "no date" bucket. Built from `expectedCloseAt`; the "no date" bucket doubles as a hygiene nudge to capture dates.
 
 ## Example dialogue
 

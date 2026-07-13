@@ -24,8 +24,13 @@ import {
   isLostReason,
   type LeadStatus,
 } from "@/lib/domain";
-import { TEMPLATES, type TemplateKey } from "@/lib/whatsapp";
-import { qualificationScore, qualificationVerdict, VERDICT_LABELS } from "@/lib/scoring";
+import { templateAllowedFor } from "@/lib/whatsapp";
+import {
+  qualificationScore,
+  qualificationVerdict,
+  effectiveTimeline,
+  VERDICT_LABELS,
+} from "@/lib/scoring";
 
 export interface ActionResult {
   error?: string;
@@ -35,6 +40,24 @@ function revalidateLead(leadId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/leads");
   revalidatePath(`/leads/${leadId}`);
+}
+
+/** "" → null; else a non-negative whole RM amount, or undefined when invalid. */
+function parseOptionalRM(raw: FormDataEntryValue | null): number | null | undefined {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  const n = Math.round(Number(s));
+  if (!Number.isFinite(n) || n < 0) return undefined;
+  return n;
+}
+
+/** "" → null; else a valid date (at local noon, so bands don't flip on TZ), or undefined. */
+function parseOptionalDate(raw: FormDataEntryValue | null): Date | null | undefined {
+  const s = String(raw ?? "").trim();
+  if (!s) return null;
+  const d = new Date(`${s}T12:00:00`);
+  if (Number.isNaN(d.getTime())) return undefined;
+  return d;
 }
 
 /** A valid source is a built-in code or a name registered in CustomSource. */
@@ -72,19 +95,29 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
   const dealValue = Math.round(Number(formData.get("dealValue") ?? 0));
   const budgetStatus = String(formData.get("budgetStatus") ?? "UNKNOWN");
   const authority = String(formData.get("authority") ?? "UNKNOWN");
-  const timeline = String(formData.get("timeline") ?? "UNKNOWN");
+  const timelinePicked = String(formData.get("timeline") ?? "UNKNOWN");
+  const budgetAmount = parseOptionalRM(formData.get("budgetAmount"));
+  const expectedCloseAt = parseOptionalDate(formData.get("expectedCloseAt"));
 
   if (!name) return { error: "Enter the lead's name." };
   if (phone.replace(/\D/g, "").length < 8) return { error: "Enter a valid phone number." };
   if (!(await isValidSource(source))) return { error: "Pick a source from the list." };
   if (!Number.isFinite(dealValue) || dealValue < 0) return { error: "Deal value must be 0 or more." };
-  if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timeline)) {
+  if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timelinePicked)) {
     return { error: "Pick the qualification answers from the lists." };
   }
+  if (budgetAmount === undefined) return { error: "Budget (RM) must be 0 or more, or left empty." };
+  if (expectedCloseAt === undefined) return { error: "That isn't a valid expected purchase date." };
+
+  // An exact purchase date beats the hand-picked band (Blueprint §14.8) —
+  // the stored `timeline` is always the effective one, so analytics stay honest.
+  const timeline = effectiveTimeline(timelinePicked, expectedCloseAt, new Date());
 
   // The intake gate's number is part of the audit trail: the CREATED activity
   // records what the lead scored (and the verdict) at the moment it was added.
-  const fit = qualificationScore({ budgetStatus, authority, timeline, source, dealValue });
+  const fit = qualificationScore({
+    budgetStatus, authority, timeline, source, dealValue, budgetAmount, expectedCloseAt,
+  });
   const verdict = VERDICT_LABELS[qualificationVerdict(fit)];
 
   const lead = await prisma.lead.create({
@@ -99,6 +132,8 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
       budgetStatus,
       authority,
       timeline,
+      budgetAmount,
+      expectedCloseAt,
       status: "NEW",
       createdById: user.id,
     },
@@ -142,15 +177,21 @@ export async function updateLead(
   const dealValue = Math.round(Number(formData.get("dealValue") ?? 0));
   const budgetStatus = String(formData.get("budgetStatus") ?? "UNKNOWN");
   const authority = String(formData.get("authority") ?? "UNKNOWN");
-  const timeline = String(formData.get("timeline") ?? "UNKNOWN");
+  const timelinePicked = String(formData.get("timeline") ?? "UNKNOWN");
+  const budgetAmount = parseOptionalRM(formData.get("budgetAmount"));
+  const expectedCloseAt = parseOptionalDate(formData.get("expectedCloseAt"));
 
   if (!name) return { error: "Enter the lead's name." };
   if (phone.replace(/\D/g, "").length < 8) return { error: "Enter a valid phone number." };
   if (!(await isValidSource(source))) return { error: "Pick a source from the list." };
   if (!Number.isFinite(dealValue) || dealValue < 0) return { error: "Deal value must be 0 or more." };
-  if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timeline)) {
+  if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timelinePicked)) {
     return { error: "Pick the qualification answers from the lists." };
   }
+  if (budgetAmount === undefined) return { error: "Budget (RM) must be 0 or more, or left empty." };
+  if (expectedCloseAt === undefined) return { error: "That isn't a valid expected purchase date." };
+
+  const timeline = effectiveTimeline(timelinePicked, expectedCloseAt, new Date());
 
   await prisma.lead.update({
     where: { id: leadId },
@@ -165,6 +206,8 @@ export async function updateLead(
       budgetStatus,
       authority,
       timeline,
+      budgetAmount,
+      expectedCloseAt,
     },
   });
 
@@ -337,9 +380,11 @@ export async function assignLead(leadId: string, formData: FormData): Promise<vo
 }
 
 // ---------------------------------------------------------------------------
-// WhatsApp contact — logs intent at click time (ADR-0002)
+// WhatsApp contact — logs intent at click time (ADR-0002). Templates live in
+// the MessageTemplate table (Blueprint §14.9); the role gate is re-checked
+// here, never only in the panel.
 // ---------------------------------------------------------------------------
-export async function logWhatsAppContact(leadId: string, templateKey: string): Promise<ActionResult> {
+export async function logWhatsAppContact(leadId: string, templateId: string): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) return { error: "Your session expired. Sign in again." };
 
@@ -347,12 +392,17 @@ export async function logWhatsAppContact(leadId: string, templateKey: string): P
   if (!lead) return { error: "This lead no longer exists." };
   if (!can(user, "whatsapp_contact", lead)) return { error: "You can only contact your own leads." };
 
-  const template = TEMPLATES[templateKey as TemplateKey];
+  const template = await prisma.messageTemplate.findUnique({ where: { id: templateId } });
+  if (template && !templateAllowedFor(template.roles, user.role)) {
+    return { error: "That template isn't available for your role." };
+  }
+
   await prisma.activity.create({
     data: {
       leadId,
       userId: user.id,
       type: "WHATSAPP_CONTACT",
+      // A deleted template still logs the contact — intent matters most.
       detail: template ? `${template.label} template` : "Custom message",
     },
   });
