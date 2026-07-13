@@ -427,6 +427,81 @@ dialog.modal::backdrop { background: rgba(23, 25, 34, 0.45); animation: backdrop
 .empty-cell a { color: var(--iris); font-weight: 600; }
 
 /* ============================================================================
+   Qualification gate (DESIGN.md §5 — Add/Edit lead dialogs)
+   ========================================================================== */
+.qual-head { margin: 4px 0 12px; padding-top: 14px; border-top: 1px solid var(--mist-2);
+  font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; color: var(--slate); }
+.gate { background: var(--fog); border: 1px solid var(--mist); border-radius: var(--r-sm);
+  padding: 12px 14px; margin-bottom: 16px; }
+.gate-head { display: flex; align-items: baseline; gap: 8px; }
+.gate-lbl { font-size: 11.5px; font-weight: 500; color: var(--slate); text-transform: uppercase; letter-spacing: 0.04em; }
+.gate-score { font-size: 20px; font-weight: 600; letter-spacing: -0.02em; }
+.gate-score small { font-size: 12px; color: var(--slate); font-weight: 500; }
+.gate-verdict { margin-left: auto; font-size: 13px; font-weight: 600; }
+.gate-meter { height: 8px; background: var(--mist-2); border-radius: 99px; overflow: hidden; margin-top: 9px; }
+.gate-meter i { display: block; height: 100%; border-radius: 99px; transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.35s ease; }
+.gate-note { font-size: 12px; color: var(--slate); margin-top: 8px; line-height: 1.45; }
+
+/* lost-reason step (Advance status card) */
+.lost-why { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--mist-2); }
+.tpl.on-lost { border-color: var(--lost); background: var(--lost-t); color: #b23a34; font-weight: 600; }
+
+/* ============================================================================
+   Follow-up control + attention tags
+   ========================================================================== */
+.fu-state { font-size: 13px; color: var(--slate); margin-bottom: 9px; }
+.fu-state b { color: var(--ink); font-weight: 600; }
+.fu-state b.fu-overdue { color: #b23a34; }
+.fu-row { display: flex; gap: 9px; align-items: center; }
+.fu-row input[type="date"] { flex: 1; min-width: 0; height: 36px; border: 1px solid var(--mist); border-radius: var(--r-sm);
+  padding: 0 10px; font-size: 13.5px; font-family: var(--ui); color: var(--ink); background: var(--surface); }
+.fu-row input[type="date"]:focus { outline: none; border-color: var(--iris); box-shadow: 0 0 0 3px var(--iris-ring); }
+.fu-flag, .fu-today, .fu-idle { display: inline-flex; align-items: center; padding: 2px 8px; border-radius: 99px;
+  font-size: 11.5px; font-weight: 600; white-space: nowrap; }
+.fu-flag { background: var(--lost-t); color: #b23a34; }
+.fu-today { background: var(--proposal-t); color: #a5680a; }
+.fu-idle { background: var(--mist-2); color: var(--slate); }
+
+/* Needs attention / Hottest leads rows (dashboard) */
+.attn { display: flex; flex-direction: column; }
+.attn-row { display: flex; align-items: center; gap: 10px; padding: 9px 2px; border-bottom: 1px solid var(--mist-2);
+  color: var(--ink); transition: background 0.12s; }
+.attn-row:last-child { border-bottom: none; }
+.attn-row:hover { background: #f4f4fe; }
+.attn-row .dot { margin-top: 0; }
+.attn-name { font-size: 13.5px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.attn-stage { font-size: 12px; color: var(--slate); flex-shrink: 0; }
+.attn-row .fu-flag, .attn-row .fu-today, .attn-row .fu-idle, .attn-row .pill { margin-left: auto; flex-shrink: 0; }
+.attn-rm { flex-shrink: 0; font-size: 13px; min-width: 86px; text-align: right; }
+.attn-more { display: block; padding-top: 10px; font-size: 12.5px; font-weight: 500; color: var(--iris); }
+.attn-more:hover { text-decoration: underline; }
+.hot-rank { width: 20px; height: 20px; border-radius: 50%; background: var(--mist-2); color: var(--slate);
+  display: grid; place-items: center; font-size: 11px; font-weight: 600; flex-shrink: 0; }
+.attn-row:first-child .hot-rank { background: #fcece2; color: #b0400e; }
+
+/* ============================================================================
+   Velocity strip (dashboard) + reports
+   ========================================================================== */
+.velo { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; padding: 0; overflow: hidden; }
+.velo-step { padding: 16px 18px; border-right: 1px solid var(--mist); }
+.velo-step:last-child { border-right: none; }
+.velo-stage { display: flex; align-items: center; gap: 7px; font-size: 12.5px; }
+.velo-stage .dot { width: 8px; height: 8px; margin-top: 0; }
+.velo-stage b { font-weight: 600; }
+.velo-days { font-size: 22px; font-weight: 600; margin-top: 8px; letter-spacing: -0.02em; }
+.velo-sub { font-size: 11.5px; color: var(--slate); margin-top: 1px; }
+.velo-conv { font-size: 12px; color: var(--slate); margin-top: 10px; padding-top: 9px; border-top: 1px dashed var(--mist); }
+.velo-conv .tnum { font-weight: 600; color: var(--ink); }
+
+/* reports: wider value column + monthly trend */
+.srcrow.src-wide { grid-template-columns: 92px 1fr auto; }
+.trend { display: flex; flex-direction: column; gap: 13px; }
+.trend-month { display: grid; grid-template-columns: 34px 1fr auto; gap: 12px; align-items: center; }
+.trend-lbl { font-size: 12.5px; font-weight: 600; color: var(--slate); }
+.trend-bars { display: flex; flex-direction: column; gap: 4px; }
+.trend-nums { display: flex; flex-direction: column; gap: 4px; font-size: 11.5px; text-align: right; min-width: 120px; }
+
+/* ============================================================================
    Responsive
    ========================================================================== */
 @media (max-width: 920px) {
@@ -438,6 +513,9 @@ dialog.modal::backdrop { background: rgba(23, 25, 34, 0.45); animation: backdrop
   .kpis { grid-template-columns: repeat(2, 1fr); }
   .kpi:nth-child(2) { border-right: none; }
   .kpi:nth-child(1), .kpi:nth-child(2) { border-bottom: 1px solid var(--mist); }
+  .velo { grid-template-columns: repeat(2, 1fr); }
+  .velo-step:nth-child(2) { border-right: none; }
+  .velo-step:nth-child(1), .velo-step:nth-child(2) { border-bottom: 1px solid var(--mist); }
   .two-col { grid-template-columns: 1fr; }
   .detail-grid { grid-template-columns: 1fr; }
   .form-grid { grid-template-columns: 1fr; }

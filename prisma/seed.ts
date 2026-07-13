@@ -1,6 +1,11 @@
-// Demo seed (Blueprint §13): 1 Admin, 1 Manager, 2 Sales Reps, ~12 leads across every
+// Demo seed (Blueprint §13): 1 Admin, 1 Manager, 2 Sales Reps, ~15 leads across every
 // status and source, each with a small activity timeline. Passwords are shared and
 // documented in the README for the demo.
+//
+// Timelines are spread over the past ~10 weeks with day-scale gaps so the velocity
+// analytics (time-in-stage, conversion, sales cycle) and the monthly trend read as
+// real history, not zeros. Qualification facts, follow-ups, and lost reasons are
+// seeded so the fit scores, attention queue, and reports land populated.
 //
 // Run with:  npm run db:seed   (or  npm run db:reset  to wipe + reseed)
 
@@ -10,6 +15,7 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 const DEMO_PASSWORD = "password123";
+const DAY = 86_400_000;
 
 async function main() {
   const passwordHash = await bcrypt.hash(DEMO_PASSWORD, 10);
@@ -41,7 +47,17 @@ async function main() {
     status: string;
     dealValue: number;
     assignedTo?: { id: string; name: string } | null;
-    activities: { type: string; detail: string; by: { id: string } }[];
+    /** qualification facts (default UNKNOWN when omitted) */
+    budgetStatus?: string;
+    authority?: string;
+    timeline?: string;
+    /** days from now (negative = overdue, 0 = today) */
+    followUpInDays?: number;
+    lostReason?: string;
+    /** lead created this many days ago */
+    createdDaysAgo: number;
+    /** each activity happens this many days after the previous one (first = after creation) */
+    activities: { type: string; detail: string; by: { id: string }; afterDays?: number }[];
   };
 
   const leads: Seed[] = [
@@ -49,133 +65,213 @@ async function main() {
       name: "Nurul Aziz", phone: "+60 12-345 6789", email: "nurul.aziz@petronas.my",
       company: "Petronas SB", source: "REFERRAL", status: "QUALIFIED", dealValue: 48000,
       assignedTo: huiting,
+      budgetStatus: "LIKELY", authority: "DECISION_MAKER", timeline: "THIS_QUARTER",
+      followUpInDays: 1,
+      createdDaysAgo: 14,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Referral", by: manager },
-        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting },
-        { type: "WHATSAPP_CONTACT", detail: "Intro template", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting },
+        { type: "CREATED", detail: "Lead created · source Referral", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager, afterDays: 0.2 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting, afterDays: 1 },
+        { type: "WHATSAPP_CONTACT", detail: "Intro template", by: huiting, afterDays: 0.1 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting, afterDays: 4 },
       ],
     },
     {
       name: "Wei Jie Tan", phone: "+60 16-882 4410", email: "weijie@grab.com",
       company: "Grab Malaysia", source: "WEBSITE", status: "CONTACTED", dealValue: 12500,
       assignedTo: null,
+      budgetStatus: "UNKNOWN", authority: "INFLUENCER", timeline: "THIS_YEAR",
+      createdDaysAgo: 9,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Website", by: manager },
-        { type: "WHATSAPP_CONTACT", detail: "Intro template", by: farid },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid },
+        { type: "CREATED", detail: "Lead created · source Website", by: manager, afterDays: 0 },
+        { type: "WHATSAPP_CONTACT", detail: "Intro template", by: farid, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 0.1 },
       ],
     },
     {
       name: "Siti Rahayu", phone: "+60 19-770 1123", email: "siti@maybank.com",
       company: "Maybank", source: "EVENT", status: "PROPOSAL", dealValue: 90000,
       assignedTo: farid,
+      budgetStatus: "CONFIRMED", authority: "DECISION_MAKER", timeline: "IMMEDIATE",
+      followUpInDays: -2, // overdue — the demo's "needs attention" star
+      createdDaysAgo: 24,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Event", by: manager },
-        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid },
-        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid },
-        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: farid },
+        { type: "CREATED", detail: "Lead created · source Event", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager, afterDays: 0.3 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid, afterDays: 5 },
+        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: farid, afterDays: 6 },
       ],
     },
     {
       name: "David Lim", phone: "+60 12-901 5567", email: "david.lim@airasia.com",
       company: "AirAsia", source: "REFERRAL", status: "WON", dealValue: 120000,
       assignedTo: huiting,
+      budgetStatus: "CONFIRMED", authority: "DECISION_MAKER", timeline: "IMMEDIATE",
+      createdDaysAgo: 63,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Referral", by: admin },
-        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Proposal → Won", by: huiting },
+        { type: "CREATED", detail: "Lead created · source Referral", by: admin, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager, afterDays: 0.5 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting, afterDays: 4 },
+        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: huiting, afterDays: 5 },
+        { type: "STATUS_CHANGE", detail: "Proposal → Won", by: huiting, afterDays: 7 },
       ],
     },
     {
       name: "Ahmad Faizal", phone: "+60 13-448 2290", email: "faizal@sunway.com.my",
       company: "Sunway Group", source: "SOCIAL_MEDIA", status: "PROPOSAL", dealValue: 64500,
       assignedTo: farid,
+      budgetStatus: "LIKELY", authority: "INFLUENCER", timeline: "THIS_QUARTER",
+      followUpInDays: 3,
+      createdDaysAgo: 30,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Social media", by: manager },
-        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid },
-        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid },
-        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: farid },
+        { type: "CREATED", detail: "Lead created · source Social media", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 2 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid, afterDays: 6 },
+        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: farid, afterDays: 9 },
       ],
     },
     {
       name: "Mei Ling Chong", phone: "+60 17-330 8842", email: "meiling@topglove.com",
       company: "Top Glove", source: "WEBSITE", status: "NEW", dealValue: 30000,
       assignedTo: null,
-      activities: [{ type: "CREATED", detail: "Lead created · source Website", by: manager }],
+      budgetStatus: "UNKNOWN", authority: "UNKNOWN", timeline: "THIS_QUARTER",
+      createdDaysAgo: 2,
+      activities: [{ type: "CREATED", detail: "Lead created · source Website", by: manager, afterDays: 0 }],
     },
     {
       name: "Ravi Kumar", phone: "+60 11-2984 6610", email: "ravi@axiata.com",
       company: "Axiata", source: "REFERRAL", status: "QUALIFIED", dealValue: 55000,
       assignedTo: farid,
+      budgetStatus: "CONFIRMED", authority: "INFLUENCER", timeline: "THIS_QUARTER",
+      followUpInDays: 0, // due today
+      createdDaysAgo: 12,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Referral", by: manager },
-        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid },
-        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid },
+        { type: "CREATED", detail: "Lead created · source Referral", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager, afterDays: 0.4 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid, afterDays: 5 },
       ],
     },
     {
       name: "Farah Nadia", phone: "+60 18-664 2201", email: "farah@genting.com",
       company: "Genting", source: "WALK_IN", status: "NEW", dealValue: 21000,
       assignedTo: null,
-      activities: [{ type: "CREATED", detail: "Lead created · source Walk-in", by: huiting }],
+      budgetStatus: "UNKNOWN", authority: "DECISION_MAKER", timeline: "UNKNOWN",
+      createdDaysAgo: 8, // idle NEW lead — shows up in the attention queue
+      activities: [{ type: "CREATED", detail: "Lead created · source Walk-in", by: huiting, afterDays: 0 }],
     },
     {
       name: "Kok Wai Lee", phone: "+60 12-556 7781", email: "kokwai@publicbank.com.my",
       company: "Public Bank", source: "EVENT", status: "LOST", dealValue: 40000,
       assignedTo: huiting,
+      budgetStatus: "LIKELY", authority: "INFLUENCER", timeline: "THIS_YEAR",
+      lostReason: "PRICE",
+      createdDaysAgo: 38,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Event", by: manager },
-        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Contacted → Lost", by: huiting },
+        { type: "CREATED", detail: "Lead created · source Event", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager, afterDays: 0.5 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting, afterDays: 2 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Lost · Price too high", by: huiting, afterDays: 8 },
       ],
     },
     {
       name: "Zulkifli Hassan", phone: "+60 13-220 9934", email: "zul@misc.com.my",
       company: "MISC Berhad", source: "OTHER", status: "CONTACTED", dealValue: 78000,
       assignedTo: huiting,
+      budgetStatus: "LIKELY", authority: "DECISION_MAKER", timeline: "THIS_QUARTER",
+      followUpInDays: 2,
+      createdDaysAgo: 16, // contacted 12 days ago, quiet since — idle
       activities: [
-        { type: "CREATED", detail: "Lead created · source Other", by: admin },
-        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting },
+        { type: "CREATED", detail: "Lead created · source Other", by: admin, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting, afterDays: 3 },
       ],
     },
     {
       name: "Priya Devi", phone: "+60 16-778 3320", email: "priya@ihh.com",
       company: "IHH Healthcare", source: "SOCIAL_MEDIA", status: "QUALIFIED", dealValue: 33000,
       assignedTo: farid,
+      budgetStatus: "UNKNOWN", authority: "INFLUENCER", timeline: "THIS_YEAR",
+      createdDaysAgo: 19,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Social media", by: manager },
-        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid },
-        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid },
+        { type: "CREATED", detail: "Lead created · source Social media", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager, afterDays: 0.5 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 2 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid, afterDays: 7 },
       ],
     },
     {
       name: "Tan Sri Goh", phone: "+60 12-118 4455", email: "goh@ytl.com",
       company: "YTL Corporation", source: "REFERRAL", status: "WON", dealValue: 150000,
       assignedTo: huiting,
+      budgetStatus: "CONFIRMED", authority: "DECISION_MAKER", timeline: "THIS_QUARTER",
+      createdDaysAgo: 40,
       activities: [
-        { type: "CREATED", detail: "Lead created · source Referral", by: admin },
-        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager },
-        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: huiting },
-        { type: "STATUS_CHANGE", detail: "Proposal → Won", by: huiting },
+        { type: "CREATED", detail: "Lead created · source Referral", by: admin, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager, afterDays: 0.3 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting, afterDays: 6 },
+        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: huiting, afterDays: 5 },
+        { type: "STATUS_CHANGE", detail: "Proposal → Won", by: huiting, afterDays: 9 },
+      ],
+    },
+    {
+      name: "Jason Wong", phone: "+60 14-902 7712", email: "jason@ecommedge.my",
+      company: "EcommEdge", source: "WEBSITE", status: "LOST", dealValue: 15000,
+      assignedTo: farid,
+      budgetStatus: "UNKNOWN", authority: "INFLUENCER", timeline: "UNKNOWN",
+      lostReason: "NO_RESPONSE",
+      createdDaysAgo: 45,
+      activities: [
+        { type: "CREATED", detail: "Lead created · source Website", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 2 },
+        { type: "WHATSAPP_CONTACT", detail: "Follow-up template", by: farid, afterDays: 4 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Lost · Went quiet", by: farid, afterDays: 10 },
+      ],
+    },
+    {
+      name: "Aisha Binti Omar", phone: "+60 17-455 8890", email: "aisha@selangorretail.my",
+      company: "Selangor Retail Group", source: "WALK_IN", status: "LOST", dealValue: 25000,
+      assignedTo: huiting,
+      budgetStatus: "LIKELY", authority: "DECISION_MAKER", timeline: "THIS_QUARTER",
+      lostReason: "COMPETITOR",
+      createdDaysAgo: 21,
+      activities: [
+        { type: "CREATED", detail: "Lead created · source Walk-in", by: huiting, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Hui Ting", by: manager, afterDays: 0.5 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting, afterDays: 4 },
+        { type: "STATUS_CHANGE", detail: "Qualified → Lost · Chose a competitor", by: huiting, afterDays: 6 },
+      ],
+    },
+    {
+      name: "Marcus Teoh", phone: "+60 12-667 3341", email: "marcus@penanglogistics.my",
+      company: "Penang Logistics", source: "EVENT", status: "WON", dealValue: 70000,
+      assignedTo: farid,
+      budgetStatus: "CONFIRMED", authority: "DECISION_MAKER", timeline: "IMMEDIATE",
+      createdDaysAgo: 33,
+      activities: [
+        { type: "CREATED", detail: "Lead created · source Event", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager, afterDays: 0.2 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: farid, afterDays: 3 },
+        { type: "STATUS_CHANGE", detail: "Qualified → Proposal", by: farid, afterDays: 4 },
+        { type: "STATUS_CHANGE", detail: "Proposal → Won", by: farid, afterDays: 6 },
       ],
     },
   ];
 
+  const now = Date.now();
   let created = 0;
   for (const l of leads) {
+    const createdAt = new Date(now - l.createdDaysAgo * DAY);
+    const followUp =
+      l.followUpInDays === undefined ? null : new Date(now + l.followUpInDays * DAY);
+
     const lead = await prisma.lead.create({
       data: {
         name: l.name,
@@ -185,24 +281,30 @@ async function main() {
         source: l.source,
         status: l.status,
         dealValue: l.dealValue,
+        budgetStatus: l.budgetStatus ?? "UNKNOWN",
+        authority: l.authority ?? "UNKNOWN",
+        timeline: l.timeline ?? "UNKNOWN",
+        nextFollowUpAt: followUp,
+        lostReason: l.lostReason ?? null,
         assignedToId: l.assignedTo ? l.assignedTo.id : null,
         createdById: manager.id,
+        createdAt,
       },
     });
 
-    // Space activities out so timelines read chronologically.
-    let t = Date.now() - l.activities.length * 3_600_000;
+    // Walk the timeline forward from creation using per-activity day gaps.
+    let t = createdAt.getTime();
     for (const a of l.activities) {
+      t += (a.afterDays ?? 1) * DAY;
       await prisma.activity.create({
         data: {
           leadId: lead.id,
           userId: a.by.id,
           type: a.type,
           detail: a.detail,
-          createdAt: new Date(t),
+          createdAt: new Date(Math.min(t, now - 60_000)), // never in the future
         },
       });
-      t += 3_600_000;
     }
     created++;
   }

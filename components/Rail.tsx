@@ -44,6 +44,14 @@ export default function Rail({ user }: { user: { name: string; role: Role } }) {
           </svg>
           <span>Leads</span>
         </Link>
+        {(user.role === "MANAGER" || user.role === "ADMIN") && (
+          <Link href="/reports" className={`navitem${isActive("/reports") ? " active" : ""}`}>
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">
+              <path d="M4 20V10M10 20V4M16 20v-8M21 20H3" />
+            </svg>
+            <span>Reports</span>
+          </Link>
+        )}
         {user.role === "ADMIN" && (
           <Link href="/users" className={`navitem${isActive("/users") ? " active" : ""}`}>
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor">

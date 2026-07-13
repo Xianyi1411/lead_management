@@ -2,7 +2,13 @@
 
 import { useState, useTransition } from "react";
 import { changeLeadStatus, reopenLead } from "@/app/(app)/leads/actions";
-import { STATUS_LABELS, type LeadStatus } from "@/lib/domain";
+import {
+  LOST_REASONS,
+  LOST_REASON_LABELS,
+  STATUS_LABELS,
+  type LeadStatus,
+  type LostReason,
+} from "@/lib/domain";
 import { allowedTransitions, isTerminal, reopenTarget } from "@/lib/transitions";
 
 const FUNNEL: LeadStatus[] = ["NEW", "CONTACTED", "QUALIFIED", "PROPOSAL", "WON"];
@@ -23,6 +29,9 @@ export default function StatusAdvance({
 }) {
   const [pending, startTransition] = useTransition();
   const [error, setError] = useState<string | null>(null);
+  // Marking Lost is a two-step move: pick WHY first (win/loss analytics feed on it).
+  const [losing, setLosing] = useState(false);
+  const [lostReason, setLostReason] = useState<LostReason | null>(null);
 
   const terminal = isTerminal(status);
   const currentIdx = FUNNEL.indexOf(status);
@@ -89,14 +98,60 @@ export default function StatusAdvance({
                 <button
                   key={to}
                   className={`step-btn ${cls}`}
-                  disabled={pending}
-                  onClick={() => run(() => changeLeadStatus(leadId, to))}
+                  disabled={pending || (losing && to !== "LOST")}
+                  aria-expanded={to === "LOST" ? losing : undefined}
+                  onClick={() => {
+                    if (to === "LOST") {
+                      setError(null);
+                      setLosing((v) => !v);
+                    } else {
+                      run(() => changeLeadStatus(leadId, to));
+                    }
+                  }}
                 >
                   {pending ? "Saving…" : label}
                 </button>
               );
             })}
           </div>
+
+          {losing && (
+            <div className="lost-why">
+              <div className="next-label">Why was this lead lost?</div>
+              <div className="tpl-select">
+                {LOST_REASONS.map((r) => (
+                  <button
+                    key={r}
+                    type="button"
+                    className={`tpl${lostReason === r ? " on-lost" : ""}`}
+                    onClick={() => setLostReason(r)}
+                  >
+                    {LOST_REASON_LABELS[r]}
+                  </button>
+                ))}
+              </div>
+              <div className="next-actions">
+                <button
+                  className="step-btn lost"
+                  disabled={pending || !lostReason}
+                  onClick={() => run(() => changeLeadStatus(leadId, "LOST", lostReason ?? undefined))}
+                >
+                  {pending ? "Saving…" : "Confirm Lost"}
+                </button>
+                <button
+                  className="step-btn"
+                  style={{ background: "var(--mist-2)", color: "var(--slate)" }}
+                  disabled={pending}
+                  onClick={() => {
+                    setLosing(false);
+                    setLostReason(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
         </>
       )}
 

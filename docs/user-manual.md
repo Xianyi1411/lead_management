@@ -38,8 +38,16 @@ Use **Log out** at the top right of any page to end your session.
 
 ## Everyone: working a Lead
 
-**Add a Lead** — *New lead* button → name and phone are required; set the Source
-and Deal Value (RM) if known. New Leads start as **New** and unassigned.
+**Add a Lead — and the qualification gate** — *New lead* button → name and phone
+are required; set the Source and Deal Value (RM) if known. Then answer the three
+**Qualification** questions: does the lead have **budget**, is your contact the
+**decision maker**, and what's their **purchase timeline**? A **Fit Score**
+(0–100) updates live as you answer, with a plain recommendation: *Strong fit* —
+add and prioritise; *Medium fit* — add, but confirm budget/timeline early;
+*Low fit* — consider parking it instead of spending calls on it. The score
+advises; you decide. "Not sure yet" is always allowed — you can update the
+answers later via *Edit lead* as you learn more. New Leads start as **New** and
+unassigned.
 
 **Move a Lead forward** — on the Lead page, the *Advance status* panel shows the
 funnel: **New → Contacted → Qualified → Proposal → Won**. Only the legal next
@@ -47,6 +55,22 @@ steps appear as buttons — one step forward at a time, or **Mark Lost** from an
 active Status. There is no way to jump (e.g. straight to Won); that's the
 transition rule, not a bug. **Won** and **Lost** are frozen; only a Manager or
 Admin can reopen.
+
+**Mark a Lead Lost** — clicking *Mark Lost* asks **why** first: pick a reason
+(price, competitor, went quiet, not interested, bad fit, other) and confirm. The
+reason is recorded on the Lead and feeds the *Why we lose* report.
+
+**Schedule a follow-up** — in the *Advance status* panel, pick a date and
+**Schedule**. The date shows on the Leads table; when it passes, the Lead is
+flagged **Overdue** in red and jumps to the top of the Dashboard's
+**Needs attention** queue. Clear or reschedule any time. Leads with no activity
+for 7+ days and no planned follow-up are flagged **Idle**.
+
+**Read the Fit column** — every active Lead shows a temperature pill: **Hot**
+(work it now), **Warm**, or **Cold**, from its Fit Score, funnel depth, and how
+long it's been quiet. The **Focus** filter on the Leads page narrows to
+*Overdue follow-up*, *Due today*, *Idle 7+ days*, or *Hot leads* — that's your
+morning worklist.
 
 **Contact via WhatsApp** — pick a Message Template (Intro, Follow-up, Proposal
 follow-up), edit the preview text if you like, then **Open WhatsApp**. The app
@@ -80,6 +104,24 @@ a Lead to a Sales Rep (dropdown in the Lead info panel → *Assign*), **delete**
 Lead (button in Lead info → confirm inline; this removes its whole history — prefer
 marking Lost), and **reopen** a Won or Lost Lead (Won reopens to Proposal; Lost
 returns to where it fell out of the funnel). Your Dashboard is team-wide.
+
+**Reports** (Managers and Admins only) — the analytics screen in the left rail:
+
+- **Headline strip** — won all-time (RM), win rate of closed Leads, average sales
+  cycle (created → Won), and average first response (Assignment → the Rep's first
+  recorded touch).
+- **Rep performance** — per Rep: open Leads, pipeline RM, won RM, win rate, and
+  first-response time. Click a Rep's name to see their Leads.
+- **Why we lose** — Lost Leads grouped by reason. If "price" dominates, that's a
+  pricing conversation, not a rep problem.
+- **Won value by source** — which Source produces actual revenue (not just lead
+  count) — spend marketing effort accordingly.
+- **Monthly outcomes** — won vs lost RM per month, dated by when the Lead actually
+  closed.
+
+The Dashboard's **Velocity** strip (all roles) reads the same history: average
+days a Lead spends in each Status and the percentage that advances to the next —
+the slowest stage with the lowest advance rate is where the funnel leaks.
 
 **A typical flow:** a new Lead arrives unassigned → open it → assign to a Rep →
 track it through the team Dashboard; step in to reopen or delete when needed.

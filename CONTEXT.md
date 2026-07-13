@@ -90,14 +90,48 @@ _Avoid_: History, audit log (as separate concepts — they are the same thing he
 One of a small fixed set of predefined WhatsApp message texts (Introduction, Follow-up, Proposal follow-up) with placeholders for the Lead's name, company, and the sending User's name. The user picks one, may edit the preview, then opens WhatsApp.
 _Avoid_: Canned message, script
 
+### Qualification & scoring
+
+**Qualification**:
+The three BANT-style facts captured when a Lead is added (and editable later): Budget (confirmed / likely / not sure / none), the contact's Authority (decision maker / influencer / not sure), and the purchase Timeline (within a month / this quarter / this year / none yet).
+_Avoid_: Lead form extras, survey
+
+**Fit Score**:
+A 0–100 score computed by a fixed, documented rule (ADR-0003) from the Qualification facts plus Source quality and Deal Value band. Shown live in the Add-lead dialog as the qualification gate: it advises whether the Lead is worth adding before anyone spends outreach time on it. The human always makes the final call.
+_Avoid_: AI score, probability
+
+**Verdict**:
+What the Fit Score recommends at intake: **Strong fit** (≥65 — add and prioritise), **Medium fit** (40–64 — add but confirm budget/timeline early), **Low fit** (<40 — consider parking it).
+
+**Temperature**:
+How urgently an active Lead should be worked right now: Fit Score + funnel-depth bonus, cooled by inactivity and overdue Follow-ups. Bands: **Hot** (≥70), **Warm** (45–69), **Cold** (<45). Terminal Leads have no Temperature.
+_Avoid_: Priority, ranking
+
+**Follow-up**:
+The scheduled date of the next planned touch on a Lead. Overdue Follow-ups surface in the Dashboard's Needs-attention queue and as red flags on the Leads table.
+_Avoid_: Reminder, task
+
+**Lost Reason**:
+Why a Lead was Lost, chosen from a fixed list when marking Lost: price too high, chose a competitor, went quiet, not interested, bad fit, other. Feeds the win/loss report.
+
 ### Reporting
 
 **Dashboard**:
-The role-scoped overview screen: KPI cards (total Leads, pipeline value, won this month, conversion rate), a Status funnel chart, a Source breakdown, and a recent-Activity feed. Admin sees system-wide, Manager team-wide, Sales Rep personal.
+The role-scoped overview screen: KPI cards (total Leads, pipeline value, won this month, conversion rate), a Status funnel chart, the Velocity strip, the Needs-attention queue, Hottest Leads, a Source breakdown, and a recent-Activity feed. Admin sees system-wide, Manager team-wide, Sales Rep personal.
 _Avoid_: Home page, report
 
 **Pipeline value**:
 The sum of Deal Values across all active (non-terminal) Leads in the viewer's scope.
+
+**Velocity**:
+Time-based pipeline analytics reconstructed from STATUS_CHANGE Activities: average days a Lead spends in each Status, the share of Leads that advance from each Status to the next, and the average sales cycle (created → Won).
+_Avoid_: Speed, throughput
+
+**First Response Time**:
+Hours between a Lead's Assignment and the assigned Sales Rep's first recorded touch on it (WhatsApp Contact, note, or Status change). Reported per Sales Rep.
+
+**Reports**:
+The Manager/Admin-only analytics screen: per-Rep performance (open Leads, pipeline, won, win rate, First Response Time), lost-reason breakdown, won value by Source, and monthly Won/Lost outcomes.
 
 ## Example dialogue
 

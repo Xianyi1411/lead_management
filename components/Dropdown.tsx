@@ -23,6 +23,7 @@ export default function Dropdown({
   compact = false,
   active = false,
   submitOnChange = false,
+  onChange,
 }: {
   name: string;
   options: DropdownOption[];
@@ -41,6 +42,8 @@ export default function Dropdown({
   active?: boolean;
   /** submit the closest form when an option is picked (filter bars) */
   submitOnChange?: boolean;
+  /** notified when an option is picked (live-scoring forms) */
+  onChange?: (value: string) => void;
 }) {
   const [value, setValue] = useState(defaultValue);
   const [open, setOpen] = useState(false);
@@ -69,6 +72,7 @@ export default function Dropdown({
   function choose(v: string) {
     setValue(v);
     setOpen(false);
+    onChange?.(v);
     if (submitOnChange && inputRef.current) {
       inputRef.current.value = v; // ensure the value is committed before submit
       inputRef.current.form?.requestSubmit();

@@ -51,6 +51,16 @@ quarantined WhatsApp green, and the functional pipeline spectrum.
 isn't a pipeline stage, it's a neutral. Green is never used for anything except the
 WhatsApp verb and the Won stage.
 
+### The temperature scale (second data-encoding)
+
+Phase 2 (Blueprint §14) added lead **temperature** — a work-priority signal. It gets
+its own three-step scale, hue-offset from the stage spectrum so a Fit pill never
+reads as a status pill: **Hot** burnt orange `#E25822` / tint `#FCEAE0` / text
+`#B0400E`; **Warm** mustard `#C99B0B` / tint `#F9F1D8` / text `#8A6508`; **Cold**
+slate `#94A3B8` / tint `#EEF1F5` / text `#475264` (shares the New neutrals — cold is
+visually quiet on purpose). Same pill anatomy as status (dot + label + score, never
+colour alone). Terminal leads show a plain dash — they are not "worked".
+
 ### The pipeline spectrum (the signature)
 
 Ordered cool→warm as the lead heats up; Won breaks to confident green, Lost to the
@@ -335,6 +345,31 @@ button in the detail title row.
 **Still to design when built** (not yet in the mockup): Users (Admin) table + create/
 deactivate, the New-lead form, the Sales-Rep-scoped dashboard, and the loading/empty/
 error states for each surface.
+
+### Phase 2 surfaces (Blueprint §14 — built after the mockup, tokens unchanged)
+
+- **Qualification gate** (Add/Edit lead dialogs). Three dropdowns under a quiet
+  uppercase divider, then the `.gate` panel: fog background, "FIT SCORE **72**/100"
+  with the verdict right-aligned, an 8px meter that fills and recolours live
+  (verdict colours borrow stage semantics: Qualify = Won green, Review = Proposal
+  amber, Nurture = New slate), one sentence of guidance below. Advises, never blocks.
+- **Lost-reason step** (Advance status card). "Mark Lost" now reveals a chip row
+  (the WhatsApp template-chip pattern; selected chip goes Lost rose) + Confirm/Cancel.
+  Confirm stays disabled until a reason is picked.
+- **Follow-up control** (Advance status card, active leads only). Current date in
+  bold (rose + "Overdue" chip when late), date input + Schedule/Reschedule + Clear.
+  Attention tags reuse one anatomy: rose `Overdue Xd`, amber `Due today`, neutral
+  `Idle Xd`.
+- **Velocity strip** (dashboard). A 4-tile card matching the KPI-strip anatomy:
+  stage dot + name, big avg-days number, dashed divider, "NN% advance to X →".
+  Collapses 4→2 columns on small screens like the KPI strip.
+- **Needs attention / Hottest leads** (dashboard two-col). Dense link rows: stage
+  dot, name, tag (attention kind or temperature pill), right-aligned RM. Rank #1 in
+  Hottest gets the hot tint on its rank disc.
+- **Reports** (Manager/Admin). KPI strip → rep table (the leads-table pattern) →
+  two-col "Why we lose" (Lost rose bars) / "Won value by source" (Won green bars) →
+  monthly outcomes: per-month paired Won/Lost tracks, width = RM. Bars reuse the
+  `.track` component from the source breakdown — calm fills, not the spectrum.
 
 ---
 

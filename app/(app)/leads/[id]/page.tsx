@@ -3,7 +3,21 @@ import { notFound } from "next/navigation";
 import { getCurrentUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
-import { STATUS_LABELS, type ActivityType, type LeadStatus } from "@/lib/domain";
+import {
+  STATUS_LABELS,
+  BUDGET_LABELS,
+  AUTHORITY_LABELS,
+  TIMELINE_LABELS,
+  LOST_REASON_LABELS,
+  isBudgetStatus,
+  isAuthority,
+  isTimeline,
+  isLostReason,
+  isLeadSource,
+  type ActivityType,
+  type LeadStatus,
+} from "@/lib/domain";
+import { qualificationScore, qualificationVerdict, VERDICT_LABELS } from "@/lib/scoring";
 import { formatRM, relativeTime } from "@/lib/format";
 import Topbar from "@/components/Topbar";
 import StatusPill from "@/components/StatusPill";
@@ -12,6 +26,7 @@ import WhatsAppPanel from "@/components/WhatsAppPanel";
 import DeleteLeadButton from "@/components/DeleteLeadButton";
 import EditLeadDialog from "@/components/EditLeadDialog";
 import AddNoteForm from "@/components/AddNoteForm";
+import FollowUpControl from "@/components/FollowUpControl";
 import Dropdown from "@/components/Dropdown";
 import { assignLead, addNote } from "../actions";
 
@@ -21,6 +36,7 @@ const ACTIVITY_COLOR: Record<ActivityType, string> = {
   WHATSAPP_CONTACT: "var(--wa)",
   STATUS_CHANGE: "var(--qualified)",
   NOTE: "var(--slate)",
+  FOLLOW_UP: "var(--proposal)",
 };
 
 export default async function LeadDetailPage({ params }: { params: { id: string } }) {
@@ -67,6 +83,16 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
       })
     : [];
 
+  // Fit score from the stored qualification facts (same rule as the intake gate).
+  const fit = qualificationScore({
+    budgetStatus: isBudgetStatus(lead.budgetStatus) ? lead.budgetStatus : "UNKNOWN",
+    authority: isAuthority(lead.authority) ? lead.authority : "UNKNOWN",
+    timeline: isTimeline(lead.timeline) ? lead.timeline : "UNKNOWN",
+    source: isLeadSource(lead.source) ? lead.source : "OTHER",
+    dealValue: lead.dealValue,
+  });
+  const fitVerdict = VERDICT_LABELS[qualificationVerdict(fit)];
+
   return (
     <>
       <Topbar title="Lead" role={user.role} />
@@ -98,6 +124,9 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                   source: lead.source,
                   dealValue: lead.dealValue,
                   notes: lead.notes,
+                  budgetStatus: lead.budgetStatus,
+                  authority: lead.authority,
+                  timeline: lead.timeline,
                 }}
               />
             </div>
@@ -120,6 +149,22 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                 <dd>{lead.source.charAt(0) + lead.source.slice(1).toLowerCase().replace("_", " ")}</dd>
                 <dt>Deal value</dt>
                 <dd className="tnum">{formatRM(lead.dealValue)}</dd>
+                <dt>Fit score</dt>
+                <dd>
+                  <span className="tnum">{fit}</span>/100 · {fitVerdict}
+                </dd>
+                <dt>Budget</dt>
+                <dd>{isBudgetStatus(lead.budgetStatus) ? BUDGET_LABELS[lead.budgetStatus] : "—"}</dd>
+                <dt>Contact&apos;s role</dt>
+                <dd>{isAuthority(lead.authority) ? AUTHORITY_LABELS[lead.authority] : "—"}</dd>
+                <dt>Timeline</dt>
+                <dd>{isTimeline(lead.timeline) ? TIMELINE_LABELS[lead.timeline] : "—"}</dd>
+                {status === "LOST" && lead.lostReason && isLostReason(lead.lostReason) && (
+                  <>
+                    <dt>Lost because</dt>
+                    <dd style={{ color: "#B23A34" }}>{LOST_REASON_LABELS[lead.lostReason]}</dd>
+                  </>
+                )}
                 <dt>Assigned rep</dt>
                 <dd>{lead.assignedTo?.name ?? "— Unassigned"}</dd>
                 <dt>Created</dt>
@@ -166,6 +211,14 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
               ) : (
                 <div style={{ color: "var(--slate)", fontSize: 13 }}>
                   Only the assigned Sales Rep (or a Manager/Admin) can change this lead&apos;s status.
+                </div>
+              )}
+              {canEdit && !["WON", "LOST"].includes(status) && (
+                <div style={{ marginTop: 14, paddingTop: 14, borderTop: "1px solid var(--mist-2)" }}>
+                  <FollowUpControl
+                    leadId={lead.id}
+                    nextFollowUpAt={lead.nextFollowUpAt ? lead.nextFollowUpAt.toISOString() : null}
+                  />
                 </div>
               )}
             </div>

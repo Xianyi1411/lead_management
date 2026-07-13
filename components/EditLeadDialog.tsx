@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { updateLead, type ActionResult } from "@/app/(app)/leads/actions";
 import { LEAD_SOURCES, SOURCE_LABELS } from "@/lib/domain";
 import Dropdown from "./Dropdown";
+import QualificationIntake from "./QualificationIntake";
 
 type EditState = ActionResult & { ts?: number };
 
@@ -26,6 +27,9 @@ export interface EditableLead {
   source: string;
   dealValue: number;
   notes: string | null;
+  budgetStatus: string;
+  authority: string;
+  timeline: string;
 }
 
 // "Edit lead" button + centered dialog, matching the New lead / Add user pattern.
@@ -34,6 +38,9 @@ export default function EditLeadDialog({ lead }: { lead: EditableLead }) {
   const ref = useRef<HTMLDialogElement>(null);
   const action = useMemo(() => updateLead.bind(null, lead.id), [lead.id]);
   const [state, formAction] = useFormState<EditState, FormData>(action, {});
+  // Source and deal value are lifted so the qualification gate can score live.
+  const [source, setSource] = useState(lead.source);
+  const [dealValue, setDealValue] = useState(lead.dealValue);
 
   useEffect(() => {
     if (state.ts) ref.current?.close();
@@ -85,18 +92,37 @@ export default function EditLeadDialog({ lead }: { lead: EditableLead }) {
                 id="el-source"
                 name="source"
                 defaultValue={lead.source}
+                onChange={setSource}
                 options={LEAD_SOURCES.map((s) => ({ value: s, label: SOURCE_LABELS[s] }))}
               />
             </div>
             <div className="field">
               <label htmlFor="el-dealValue">Deal value (RM)</label>
-              <input id="el-dealValue" name="dealValue" type="number" min={0} step={500} defaultValue={lead.dealValue} />
+              <input
+                id="el-dealValue"
+                name="dealValue"
+                type="number"
+                min={0}
+                step={500}
+                defaultValue={lead.dealValue}
+                onChange={(e) => setDealValue(Number(e.target.value))}
+              />
             </div>
             <div className="field full">
               <label htmlFor="el-notes">Notes</label>
               <textarea id="el-notes" name="notes" defaultValue={lead.notes ?? ""} placeholder="Anything the team should know (optional)" />
             </div>
           </div>
+
+          <div className="qual-head">Qualification</div>
+          <QualificationIntake
+            idPrefix="el"
+            source={source}
+            dealValue={dealValue}
+            defaultBudget={lead.budgetStatus}
+            defaultAuthority={lead.authority}
+            defaultTimeline={lead.timeline}
+          />
 
           <div className="form-actions">
             <SubmitButton />

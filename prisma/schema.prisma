@@ -39,6 +39,14 @@ model Lead {
   status       String   @default("NEW")   // LeadStatus
   dealValue    Int      @default(0)        // RM, whole ringgit (SQLite has no Decimal; switch to Decimal when moving to Postgres)
   notes        String?
+  // Qualification facts captured at intake (BANT-style) — they feed lib/scoring.ts
+  // and become training features for a future win-prediction model (ADR-0003).
+  budgetStatus String   @default("UNKNOWN") // BudgetStatus: CONFIRMED | LIKELY | UNKNOWN | NONE
+  authority    String   @default("UNKNOWN") // Authority: DECISION_MAKER | INFLUENCER | UNKNOWN
+  timeline     String   @default("UNKNOWN") // Timeline: IMMEDIATE | THIS_QUARTER | THIS_YEAR | UNKNOWN
+  // Working-the-lead fields
+  nextFollowUpAt DateTime? // when the next touch is due; overdue = attention needed
+  lostReason     String?   // LostReason — set when status becomes LOST, cleared on reopen
   assignedToId String?
   createdById  String
   createdAt    DateTime @default(now())

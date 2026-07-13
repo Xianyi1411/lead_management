@@ -31,3 +31,14 @@ export const FUNNEL_ORDER: LeadStatus[] = [
   "WON",
   "LOST",
 ];
+
+// Temperature is the app's second data-encoding besides stage (DESIGN.md §2):
+// burnt orange (hot) → mustard (warm) → slate (cold). Hues are deliberately
+// offset from the stage spectrum so a Fit pill never reads as a status pill.
+import type { Temperature } from "./scoring";
+
+export const TEMP_UI: Record<Temperature, StatusStyle> = {
+  HOT: { label: "Hot", text: "#B0400E", dot: "#E25822", tint: "#FCEAE0" },
+  WARM: { label: "Warm", text: "#8A6508", dot: "#C99B0B", tint: "#F9F1D8" },
+  COLD: { label: "Cold", text: "#475264", dot: "#94A3B8", tint: "#EEF1F5" },
+};

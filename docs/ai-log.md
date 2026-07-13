@@ -120,3 +120,35 @@ and what a human decided/verified.
   six-beat demo slide and full speaker notes with timings, demo script, and Q&A prep.
   Generated with pptxgenjs (no Python on the machine), structurally QA'd by
   unpacking the OOXML.
+
+## 10 · Phase 2 — qualification gate, scoring, follow-ups, velocity, reports
+
+- **Prompt:** "suggest 3–5 new functions… connect with this system's usage and our
+  user group… professional perspective and more analytics" → then "implement all
+  this", plus the user's own concept: "gather more info from the leads itself, we
+  can qualify and segment the leads, then provide the scoring… to prevent any
+  resources waste… i have an idea on training a prediction model but i not sure
+  on where can we gather for the data?"
+- **Outcome:** six features in one pass, all inside the existing conventions.
+  (1) A BANT-style **qualification gate** in the Add/Edit dialogs — three intake
+  questions scored live (0–100 fit score + Strong/Medium/Low-fit verdict with
+  plain-language guidance) so weak leads can be parked before costing rep time —
+  the user's segmentation concept realised. (2) `lib/scoring.ts` +
+  `lib/velocity.ts` as pure, unit-tested rule modules (25 new Vitest tests;
+  53 total). (3) Follow-up scheduling with an Overdue/Due-today/Idle
+  **Needs-attention queue** and a Focus filter. (4) Required **lost reasons** on
+  Mark Lost. (5) A dashboard **Velocity strip** (avg days per stage, stage→stage
+  conversion, sales cycle) reconstructed purely from the STATUS_CHANGE audit
+  trail — the audit log doubling as the analytics source. (6) A Manager/Admin
+  **Reports** screen: rep performance with first-response time, why-we-lose,
+  won-value-by-source, monthly outcomes. The prediction-model question became
+  **ADR-0003**: labels must come from the system's own win/loss history (external
+  data can only be features), ~200+ closed leads are needed before a model beats
+  a rule — so ship an explainable rule now and capture structured qualification
+  facts + lost reasons from day one as the future training set, with
+  `qualificationScore()` as the swap point. AI note: the session started on a
+  fresh clone (no node_modules/.env/dev.db) — the environment was rebuilt from
+  the handoff doc before any code was written, and every feature was verified
+  live in the browser (login → dashboard → gate → lost-reason step → reports)
+  before commit; two logic refinements came from that walkthrough (a lead with a
+  scheduled future follow-up is not "idle"; due-today is not "overdue").

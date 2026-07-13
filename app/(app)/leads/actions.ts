@@ -13,11 +13,17 @@ import { canTransition, isTerminal, reopenTarget } from "@/lib/transitions";
 import {
   STATUS_LABELS,
   SOURCE_LABELS,
+  LOST_REASON_LABELS,
   isLeadStatus,
   isLeadSource,
+  isBudgetStatus,
+  isAuthority,
+  isTimeline,
+  isLostReason,
   type LeadStatus,
 } from "@/lib/domain";
 import { TEMPLATES, type TemplateKey } from "@/lib/whatsapp";
+import { qualificationScore, qualificationVerdict, VERDICT_LABELS } from "@/lib/scoring";
 
 export interface ActionResult {
   error?: string;
@@ -55,11 +61,22 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
   const source = String(formData.get("source") ?? "OTHER");
   const notes = String(formData.get("notes") ?? "").trim();
   const dealValue = Math.round(Number(formData.get("dealValue") ?? 0));
+  const budgetStatus = String(formData.get("budgetStatus") ?? "UNKNOWN");
+  const authority = String(formData.get("authority") ?? "UNKNOWN");
+  const timeline = String(formData.get("timeline") ?? "UNKNOWN");
 
   if (!name) return { error: "Enter the lead's name." };
   if (phone.replace(/\D/g, "").length < 8) return { error: "Enter a valid phone number." };
   if (!isLeadSource(source)) return { error: "Pick a source from the list." };
   if (!Number.isFinite(dealValue) || dealValue < 0) return { error: "Deal value must be 0 or more." };
+  if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timeline)) {
+    return { error: "Pick the qualification answers from the lists." };
+  }
+
+  // The intake gate's number is part of the audit trail: the CREATED activity
+  // records what the lead scored (and the verdict) at the moment it was added.
+  const fit = qualificationScore({ budgetStatus, authority, timeline, source, dealValue });
+  const verdict = VERDICT_LABELS[qualificationVerdict(fit)];
 
   const lead = await prisma.lead.create({
     data: {
@@ -70,6 +87,9 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
       source,
       notes: notes || null,
       dealValue,
+      budgetStatus,
+      authority,
+      timeline,
       status: "NEW",
       createdById: user.id,
     },
@@ -80,7 +100,7 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
       leadId: lead.id,
       userId: user.id,
       type: "CREATED",
-      detail: `Lead created · source ${SOURCE_LABELS[source]}`,
+      detail: `Lead created · source ${SOURCE_LABELS[source]} · fit ${fit}/100 (${verdict})`,
     },
   });
 
@@ -111,11 +131,17 @@ export async function updateLead(
   const source = String(formData.get("source") ?? "OTHER");
   const notes = String(formData.get("notes") ?? "").trim();
   const dealValue = Math.round(Number(formData.get("dealValue") ?? 0));
+  const budgetStatus = String(formData.get("budgetStatus") ?? "UNKNOWN");
+  const authority = String(formData.get("authority") ?? "UNKNOWN");
+  const timeline = String(formData.get("timeline") ?? "UNKNOWN");
 
   if (!name) return { error: "Enter the lead's name." };
   if (phone.replace(/\D/g, "").length < 8) return { error: "Enter a valid phone number." };
   if (!isLeadSource(source)) return { error: "Pick a source from the list." };
   if (!Number.isFinite(dealValue) || dealValue < 0) return { error: "Deal value must be 0 or more." };
+  if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timeline)) {
+    return { error: "Pick the qualification answers from the lists." };
+  }
 
   await prisma.lead.update({
     where: { id: leadId },
@@ -127,6 +153,9 @@ export async function updateLead(
       source,
       notes: notes || null,
       dealValue,
+      budgetStatus,
+      authority,
+      timeline,
     },
   });
 
@@ -164,7 +193,11 @@ export async function addNote(
 // ---------------------------------------------------------------------------
 // Status change (the transition rule, enforced)
 // ---------------------------------------------------------------------------
-export async function changeLeadStatus(leadId: string, to: string): Promise<ActionResult> {
+export async function changeLeadStatus(
+  leadId: string,
+  to: string,
+  lostReason?: string
+): Promise<ActionResult> {
   const user = await getCurrentUser();
   if (!user) return { error: "Your session expired. Sign in again." };
 
@@ -178,13 +211,24 @@ export async function changeLeadStatus(leadId: string, to: string): Promise<Acti
     return { error: `${STATUS_LABELS[from]} can't move to ${STATUS_LABELS[to]} — one step forward at a time.` };
   }
 
-  await prisma.lead.update({ where: { id: leadId }, data: { status: to } });
+  // Losing a lead must record WHY — that's what the win/loss report learns from.
+  if (to === "LOST" && !(lostReason && isLostReason(lostReason))) {
+    return { error: "Pick a reason before marking this lead Lost." };
+  }
+  const reason = to === "LOST" && lostReason && isLostReason(lostReason) ? lostReason : null;
+
+  await prisma.lead.update({
+    where: { id: leadId },
+    data: { status: to, lostReason: reason },
+  });
   await prisma.activity.create({
     data: {
       leadId,
       userId: user.id,
       type: "STATUS_CHANGE",
-      detail: `${STATUS_LABELS[from]} → ${STATUS_LABELS[to]}`,
+      detail:
+        `${STATUS_LABELS[from]} → ${STATUS_LABELS[to]}` +
+        (reason ? ` · ${LOST_REASON_LABELS[reason]}` : ""),
     },
   });
 
@@ -209,13 +253,48 @@ export async function reopenLead(leadId: string): Promise<ActionResult> {
   const prior = status === "LOST" ? await lostPriorStatus(leadId) : undefined;
   const target = reopenTarget(status, prior)!;
 
-  await prisma.lead.update({ where: { id: leadId }, data: { status: target } });
+  // Back into the active funnel — the lost reason no longer applies.
+  await prisma.lead.update({ where: { id: leadId }, data: { status: target, lostReason: null } });
   await prisma.activity.create({
     data: {
       leadId,
       userId: user.id,
       type: "STATUS_CHANGE",
       detail: `Reopened → ${STATUS_LABELS[target]}`,
+    },
+  });
+
+  revalidateLead(leadId);
+  return {};
+}
+
+// ---------------------------------------------------------------------------
+// Follow-up scheduling — the "what do I do today" queue is built from this
+// ---------------------------------------------------------------------------
+export async function setFollowUp(leadId: string, dateStr: string | null): Promise<ActionResult> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Your session expired. Sign in again." };
+
+  const lead = await prisma.lead.findUnique({ where: { id: leadId } });
+  if (!lead) return { error: "This lead no longer exists." };
+  if (!can(user, "edit_lead", lead)) return { error: "You can only schedule follow-ups on your own leads." };
+
+  let followUp: Date | null = null;
+  if (dateStr) {
+    const parsed = new Date(`${dateStr}T09:00:00`); // due at 9am local on the chosen day
+    if (Number.isNaN(parsed.getTime())) return { error: "That isn't a valid date." };
+    followUp = parsed;
+  }
+
+  await prisma.lead.update({ where: { id: leadId }, data: { nextFollowUpAt: followUp } });
+  await prisma.activity.create({
+    data: {
+      leadId,
+      userId: user.id,
+      type: "FOLLOW_UP",
+      detail: followUp
+        ? `Follow-up scheduled for ${followUp.toLocaleDateString("en-MY", { day: "numeric", month: "short", year: "numeric" })}`
+        : "Follow-up cleared",
     },
   });
 

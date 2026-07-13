@@ -118,6 +118,11 @@ isActive                      source          (enum)           createdAt
 createdAt                     status          (enum, default New)
                               dealValue       (decimal, RM)
                               notes
+                              budgetStatus    (enum, default Unknown)   ← §14
+                              authority       (enum, default Unknown)   ← §14
+                              timeline        (enum, default Unknown)   ← §14
+                              nextFollowUpAt  (datetime, nullable)      ← §14
+                              lostReason      (enum, nullable)          ← §14
                               assignedToId    FK → User (nullable)
                               createdById     FK → User
                               createdAt / updatedAt
@@ -134,7 +139,11 @@ Relationships:
 - `Role`: `ADMIN | MANAGER | SALES_REP`
 - `LeadStatus`: `NEW | CONTACTED | QUALIFIED | PROPOSAL | WON | LOST`
 - `LeadSource`: `WEBSITE | REFERRAL | WALK_IN | SOCIAL_MEDIA | EVENT | OTHER`
-- `ActivityType`: `WHATSAPP_CONTACT | STATUS_CHANGE | ASSIGNMENT | NOTE | CREATED`
+- `ActivityType`: `WHATSAPP_CONTACT | STATUS_CHANGE | ASSIGNMENT | NOTE | CREATED | FOLLOW_UP`
+- `BudgetStatus`: `CONFIRMED | LIKELY | UNKNOWN | NONE` (§14)
+- `Authority`: `DECISION_MAKER | INFLUENCER | UNKNOWN` (§14)
+- `Timeline`: `IMMEDIATE | THIS_QUARTER | THIS_YEAR | UNKNOWN` (§14)
+- `LostReason`: `PRICE | COMPETITOR | NO_RESPONSE | NOT_INTERESTED | BAD_FIT | OTHER` (§14)
 
 ---
 
@@ -288,5 +297,38 @@ Cover: solution overview, system architecture, AI usage, live demo, lessons lear
 ## 13. Seed data (for the demo)
 
 - **Users:** 1 Admin, 1 Manager, 2 Sales Reps (known passwords, documented in the user manual for the demo).
-- **Leads:** ~10–15 across all statuses and sources, some assigned, with varied deal values so the funnel chart and pipeline-value KPI look populated.
+- **Leads:** ~15 across all statuses and sources, some assigned, with varied deal values so the funnel chart and pipeline-value KPI look populated. Timelines are spread over ~10 weeks with day-scale gaps so the §14 analytics read as real history.
 - **Activities:** a few per lead so timelines aren't empty.
+
+---
+
+## 14. Phase 2 — qualification gate & analytics (post-deploy upgrade)
+
+Built after the §4 checklist shipped; same conventions (server-side enforcement,
+pure tested `lib/` modules, Activity audit rows). Detail: ADR-0003 and the
+"Qualification & scoring" / "Reporting" sections of CONTEXT.md.
+
+1. **Qualification gate at intake.** The Add-lead dialog captures three
+   BANT-style facts (budget, contact's authority, purchase timeline) and shows a
+   **live fit score (0–100)** with a verdict — Strong / Medium / Low fit — and
+   plain-language guidance, so the team decides whether a lead is worth adding
+   *before* spending outreach time. The score is advisory, never blocking; the
+   CREATED activity records the score at intake for later backtesting.
+2. **Rule-based scoring engine** (`lib/scoring.ts`, pure + tested): fit score
+   from qualification + source + deal band; **temperature** (Hot / Warm / Cold)
+   on active leads from fit + funnel depth − inactivity − overdue follow-up.
+   Explainable by design; swaps for a trained model behind the same function
+   once enough win/loss history accumulates (ADR-0003).
+3. **Follow-up scheduling.** `nextFollowUpAt` per lead, set from the detail
+   page; overdue/due-today/idle leads surface in the dashboard's
+   **Needs-attention queue** and the leads table's **Focus** filter.
+4. **Lost reasons.** Marking Lost requires a reason (fixed list) — recorded on
+   the lead and in the activity detail, feeding the win/loss report.
+5. **Pipeline velocity** (`lib/velocity.ts`, pure + tested): reconstructs each
+   lead's stage history from STATUS_CHANGE activities — avg days per stage,
+   stage→stage conversion, avg sales cycle. Dashboard shows it as the Velocity
+   strip. The audit trail doubles as the analytics source; no extra tracking.
+6. **Reports screen** (Manager/Admin, `view_reports` permission): per-rep
+   performance (open leads, pipeline RM, won RM, win rate, first-response time
+   from assignment → first touch), lost-reason breakdown, won value by source,
+   and monthly Won/Lost outcomes dated by the transition activity.
