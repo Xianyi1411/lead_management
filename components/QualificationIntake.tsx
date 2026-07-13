@@ -11,7 +11,6 @@ import {
   isBudgetStatus,
   isAuthority,
   isTimeline,
-  isLeadSource,
   type BudgetStatus,
   type Authority,
   type Timeline,
@@ -58,7 +57,7 @@ export default function QualificationIntake({
     budgetStatus: isBudgetStatus(budget) ? budget : ("UNKNOWN" as BudgetStatus),
     authority: isAuthority(authority) ? authority : ("UNKNOWN" as Authority),
     timeline: isTimeline(timeline) ? timeline : ("UNKNOWN" as Timeline),
-    source: isLeadSource(source) ? source : ("OTHER" as const),
+    source, // built-in code or custom name — lib/scoring.ts handles both
     dealValue: Number.isFinite(dealValue) ? Math.max(0, dealValue) : 0,
   };
   const score = qualificationScore(input);

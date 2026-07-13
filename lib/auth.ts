@@ -3,6 +3,7 @@
 // it uses lib/session.ts instead.
 
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import bcrypt from "bcryptjs";
 import { prisma } from "./db";
 import { Role } from "./domain";
@@ -50,4 +51,15 @@ export async function getCurrentUser(): Promise<SessionUser | null> {
   if (!user || !user.isActive) return null;
 
   return { id: user.id, name: user.name, email: user.email, role: user.role as Role };
+}
+
+/**
+ * Page-level guard. The (app) layout also redirects, but App Router renders
+ * layout and page in parallel — so a page must not assume the layout's check
+ * already ran (a stale session cookie after a DB reseed crashes it otherwise).
+ */
+export async function requireUser(): Promise<SessionUser> {
+  const user = await getCurrentUser();
+  if (!user) redirect("/login");
+  return user;
 }

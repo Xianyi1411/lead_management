@@ -132,6 +132,10 @@ Relationships:
   User 1───* Lead      (createdBy:   who added the lead)
   User 1───* Activity  (who performed the action)
   Lead 1───* Activity  (a lead's timeline)
+
+CustomSource (§14.7): id PK · name (unique) · createdAt — team-added sources;
+Lead.source stores a built-in code or a CustomSource name (validated in the
+server actions, no FK so the six built-ins need no rows).
 ```
 
 **Enums**
@@ -332,3 +336,12 @@ pure tested `lib/` modules, Activity audit rows). Detail: ADR-0003 and the
    performance (open leads, pipeline RM, won RM, win rate, first-response time
    from assignment → first touch), lost-reason breakdown, won value by source,
    and monthly Won/Lost outcomes dated by the transition activity.
+7. **Extensible sources.** The six built-in sources are no longer a closed
+   list: "+ Add a new source" in the Add/Edit lead dialogs registers a custom
+   source in a new `CustomSource` table (name-unique, deduped against built-ins
+   case-insensitively) so the whole team can pick it — never free text on the
+   lead, so analytics stay grouped. `Lead.source` stores a built-in code or a
+   custom name; validity is re-checked server-side against both. Custom sources
+   flow through the source filter, dashboard breakdown, and won-value-by-source
+   report, and score a neutral 5/10 in the fit rule until the win/loss data
+   says otherwise.

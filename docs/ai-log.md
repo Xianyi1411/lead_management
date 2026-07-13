@@ -152,3 +152,21 @@ and what a human decided/verified.
   live in the browser (login → dashboard → gate → lost-reason step → reports)
   before commit; two logic refinements came from that walkthrough (a lead with a
   scheduled future follow-up is not "idle"; due-today is not "overdue").
+
+## 11 · Extensible sources + a stale-session hardening
+
+- **Prompt:** "for the source, i think need to let user to add new, becuz there
+  might not only have these criteria only."
+- **Outcome:** sources became an open list without giving up grouped analytics:
+  a "+ Add a new source" flow in the Add/Edit dialogs registers names in a new
+  `CustomSource` table (server-deduped case-insensitively against built-ins and
+  existing customs — "web site" resolves to Website instead of forking the
+  data), and the source filter, dashboard breakdown, won-value-by-source report,
+  and fit rule (neutral 5/10 until proven) all handle built-in codes and custom
+  names uniformly through one `sourceLabel()` helper. AI note: mid-verification,
+  reseeding the database under a live login exposed a latent crash — App Router
+  renders layout and page in parallel, so the layout's auth redirect doesn't
+  protect a page that assumes a non-null user. Every page's `getCurrentUser()!`
+  assertion was replaced with a `requireUser()` guard that redirects to /login;
+  confirmed over HTTP that a stale session now lands on the login page instead
+  of a 500.

@@ -4,6 +4,7 @@ import {
   qualificationParts,
   qualificationVerdict,
   dealValuePoints,
+  sourcePoints,
   temperatureScore,
   temperature,
   recencyPenalty,
@@ -41,6 +42,12 @@ describe("fit score", () => {
     expect(parts).toHaveLength(5);
     expect(parts.reduce((s, p) => s + p.points, 0)).toBe(qualificationScore(perfect));
     expect(parts.reduce((s, p) => s + p.max, 0)).toBe(100);
+  });
+
+  it("custom (team-added) sources score the neutral 5 until proven", () => {
+    expect(sourcePoints("Google Ads")).toBe(5);
+    expect(sourcePoints("REFERRAL")).toBe(10);
+    expect(qualificationScore({ ...perfect, source: "Google Ads" })).toBe(95);
   });
 
   it("deal value points step at the documented RM bands", () => {

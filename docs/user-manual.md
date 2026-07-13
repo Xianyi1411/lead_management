@@ -39,7 +39,11 @@ Use **Log out** at the top right of any page to end your session.
 ## Everyone: working a Lead
 
 **Add a Lead — and the qualification gate** — *New lead* button → name and phone
-are required; set the Source and Deal Value (RM) if known. Then answer the three
+are required; set the Source and Deal Value (RM) if known. If the lead came
+through a channel that isn't in the Source list, click **+ Add a new source**
+under the dropdown, type the name (e.g. "Google Ads"), and it's registered for
+the whole team — it appears in the Source filter and all Source analytics from
+then on. Then answer the three
 **Qualification** questions: does the lead have **budget**, is your contact the
 **decision maker**, and what's their **purchase timeline**? A **Fit Score**
 (0–100) updates live as you answer, with a plain recommendation: *Strong fit* —

@@ -353,6 +353,10 @@ error states for each surface.
   with the verdict right-aligned, an 8px meter that fills and recolours live
   (verdict colours borrow stage semantics: Qualify = Won green, Review = Proposal
   amber, Nurture = New slate), one sentence of guidance below. Advises, never blocks.
+- **Add a new source** (SourceField in the lead dialogs). A quiet iris text link
+  under the Source dropdown ("+ Add a new source") expands to input + Add/Cancel
+  ghost buttons; the registered name is selected immediately. Link-level, not a
+  button — extending a picklist is a secondary act, never competing with the form.
 - **Lost-reason step** (Advance status card). "Mark Lost" now reveals a chip row
   (the WhatsApp template-chip pattern; selected chip goes Lost rose) + Confirm/Cancel.
   Confirm stays disabled until a reason is picked.

@@ -24,6 +24,10 @@ async function main() {
   await prisma.activity.deleteMany();
   await prisma.lead.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.customSource.deleteMany();
+
+  // One team-added source so the extensible-source flow demos populated
+  await prisma.customSource.create({ data: { name: "Google Ads" } });
 
   const admin = await prisma.user.create({
     data: { name: "Aina Zahra", email: "aina@company.my", passwordHash, role: "ADMIN" },
@@ -246,6 +250,20 @@ async function main() {
         { type: "STATUS_CHANGE", detail: "New → Contacted", by: huiting, afterDays: 1 },
         { type: "STATUS_CHANGE", detail: "Contacted → Qualified", by: huiting, afterDays: 4 },
         { type: "STATUS_CHANGE", detail: "Qualified → Lost · Chose a competitor", by: huiting, afterDays: 6 },
+      ],
+    },
+    {
+      name: "Lim Xin Yi", phone: "+60 16-334 5521", email: "xinyi@klangparts.my",
+      company: "Klang Auto Parts", source: "Google Ads", status: "CONTACTED", dealValue: 18000,
+      assignedTo: farid,
+      budgetStatus: "LIKELY", authority: "DECISION_MAKER", timeline: "THIS_QUARTER",
+      followUpInDays: 4,
+      createdDaysAgo: 5,
+      activities: [
+        { type: "CREATED", detail: "Lead created · source Google Ads", by: manager, afterDays: 0 },
+        { type: "ASSIGNMENT", detail: "Assigned to Farid", by: manager, afterDays: 0.3 },
+        { type: "WHATSAPP_CONTACT", detail: "Intro template", by: farid, afterDays: 1 },
+        { type: "STATUS_CHANGE", detail: "New → Contacted", by: farid, afterDays: 0.1 },
       ],
     },
     {

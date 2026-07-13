@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { leadScopeWhere } from "@/lib/permissions";
 import {
@@ -51,10 +51,17 @@ interface Filters {
 }
 
 export default async function LeadsPage({ searchParams }: { searchParams: Filters }) {
-  const user = (await getCurrentUser())!;
+  const user = await requireUser();
+  const customSources = (
+    await prisma.customSource.findMany({ select: { name: true }, orderBy: { name: "asc" } })
+  ).map((s) => s.name);
   const q = searchParams.q?.trim() || undefined;
   const status = searchParams.status && isLeadStatus(searchParams.status) ? searchParams.status : undefined;
-  const source = searchParams.source && isLeadSource(searchParams.source) ? searchParams.source : undefined;
+  const source =
+    searchParams.source &&
+    (isLeadSource(searchParams.source) || customSources.includes(searchParams.source))
+      ? searchParams.source
+      : undefined;
   const rep = searchParams.rep || undefined;
   const focus: Focus = (FOCUS_OPTIONS.some((o) => o.value === searchParams.focus)
     ? searchParams.focus
@@ -105,7 +112,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Filter
       budgetStatus: isBudgetStatus(l.budgetStatus) ? l.budgetStatus : "UNKNOWN",
       authority: isAuthority(l.authority) ? l.authority : "UNKNOWN",
       timeline: isTimeline(l.timeline) ? l.timeline : "UNKNOWN",
-      source: isLeadSource(l.source) ? l.source : "OTHER",
+      source: l.source,
       dealValue: l.dealValue,
     });
     const temp = temperatureScore({
@@ -162,7 +169,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Filter
         title="Leads"
         role={user.role}
         defaultQuery={q}
-        action={<AddLeadDialog />}
+        action={<AddLeadDialog customSources={customSources} />}
       />
       <div className="content screen-in">
         {/* Picking an option submits the form immediately (submitOnChange). */}
@@ -192,6 +199,7 @@ export default async function LeadsPage({ searchParams }: { searchParams: Filter
             options={[
               { value: "", label: "All" },
               ...LEAD_SOURCES.map((s) => ({ value: s, label: SOURCE_LABELS[s] })),
+              ...customSources.map((n) => ({ value: n, label: n })),
             ]}
           />
           {reps.length > 0 && (

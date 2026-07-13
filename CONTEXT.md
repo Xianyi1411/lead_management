@@ -65,7 +65,7 @@ _Avoid_: Dead, dropped, closed-lost
 The business rule governing Status changes: forward one step at a time; any active Status may move to Lost; terminal Statuses are frozen except reopening by Manager/Admin.
 
 **Source**:
-The channel through which a Lead entered: Website, Referral, Walk-in, Social Media, Event, or Other.
+The channel through which a Lead entered. Six built-ins — Website, Referral, Walk-in, Social Media, Event, Other — plus any **custom Sources** the team registers via "+ Add a new source" when adding or editing a Lead (e.g. "Google Ads"). Custom Sources are registered names shared by the whole team, never free text, so Source analytics stay grouped.
 _Avoid_: Channel, origin
 
 **Deal Value**:

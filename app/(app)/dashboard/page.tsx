@@ -1,20 +1,18 @@
 import Link from "next/link";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { leadScopeWhere } from "@/lib/permissions";
 import {
   ACTIVE_STATUSES,
   LEAD_STATUSES,
   LEAD_SOURCES,
-  SOURCE_LABELS,
   STATUS_LABELS,
+  sourceLabel,
   isBudgetStatus,
   isAuthority,
   isTimeline,
-  isLeadSource,
   type ActivityType,
   type LeadStatus,
-  type LeadSource,
 } from "@/lib/domain";
 import { qualificationScore, temperatureScore } from "@/lib/scoring";
 import { avgDaysInStage, stageConversion, avgSalesCycleDays } from "@/lib/velocity";
@@ -47,7 +45,7 @@ interface AttentionItem {
 }
 
 export default async function DashboardPage() {
-  const user = (await getCurrentUser())!; // layout guarantees a user
+  const user = await requireUser();
   const scope = leadScopeWhere(user);
 
   const leads = await prisma.lead.findMany({
@@ -112,8 +110,10 @@ export default async function DashboardPage() {
   const conversion = total > 0 ? Math.round((wonCount / total) * 100) : 0;
 
   const funnel = FUNNEL_ORDER.map((s) => ({ status: s as LeadStatus, count: statusCount[s] }));
-  const maxSource = Math.max(1, ...LEAD_SOURCES.map((s) => sourceCount[s]));
-  const sources = (LEAD_SOURCES as readonly LeadSource[])
+  // Built-ins always show (zeros included); custom sources appear once used.
+  const sourceKeys = Object.keys(sourceCount);
+  const maxSource = Math.max(1, ...sourceKeys.map((s) => sourceCount[s]));
+  const sources = sourceKeys
     .map((s) => ({ source: s, count: sourceCount[s] }))
     .sort((a, b) => b.count - a.count);
 
@@ -134,7 +134,7 @@ export default async function DashboardPage() {
       budgetStatus: isBudgetStatus(l.budgetStatus) ? l.budgetStatus : "UNKNOWN",
       authority: isAuthority(l.authority) ? l.authority : "UNKNOWN",
       timeline: isTimeline(l.timeline) ? l.timeline : "UNKNOWN",
-      source: isLeadSource(l.source) ? l.source : "OTHER",
+      source: l.source,
       dealValue: l.dealValue,
     });
     const lastActivityAt = l.activities[l.activities.length - 1]?.createdAt ?? null;
@@ -334,7 +334,7 @@ export default async function DashboardPage() {
             <div className="card-b">
               {sources.map((s) => (
                 <div className="srcrow" key={s.source}>
-                  <div className="name">{SOURCE_LABELS[s.source]}</div>
+                  <div className="name">{sourceLabel(s.source)}</div>
                   <div className="track">
                     <i style={{ width: `${(s.count / maxSource) * 100}%` }} />
                   </div>

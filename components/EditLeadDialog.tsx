@@ -3,8 +3,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { updateLead, type ActionResult } from "@/app/(app)/leads/actions";
-import { LEAD_SOURCES, SOURCE_LABELS } from "@/lib/domain";
-import Dropdown from "./Dropdown";
+import SourceField from "./SourceField";
 import QualificationIntake from "./QualificationIntake";
 
 type EditState = ActionResult & { ts?: number };
@@ -34,7 +33,13 @@ export interface EditableLead {
 
 // "Edit lead" button + centered dialog, matching the New lead / Add user pattern.
 // Closes itself on a successful save; the revalidated detail page shows the changes.
-export default function EditLeadDialog({ lead }: { lead: EditableLead }) {
+export default function EditLeadDialog({
+  lead,
+  customSources = [],
+}: {
+  lead: EditableLead;
+  customSources?: string[];
+}) {
   const ref = useRef<HTMLDialogElement>(null);
   const action = useMemo(() => updateLead.bind(null, lead.id), [lead.id]);
   const [state, formAction] = useFormState<EditState, FormData>(action, {});
@@ -88,12 +93,11 @@ export default function EditLeadDialog({ lead }: { lead: EditableLead }) {
             </div>
             <div className="field">
               <label htmlFor="el-source">Source</label>
-              <Dropdown
+              <SourceField
                 id="el-source"
-                name="source"
                 defaultValue={lead.source}
+                customSources={customSources}
                 onChange={setSource}
-                options={LEAD_SOURCES.map((s) => ({ value: s, label: SOURCE_LABELS[s] }))}
               />
             </div>
             <div className="field">

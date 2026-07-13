@@ -64,7 +64,7 @@ model Activity {
   id        String   @id @default(cuid())
   leadId    String
   userId    String
-  type      String // ActivityType: WHATSAPP_CONTACT | STATUS_CHANGE | ASSIGNMENT | NOTE | CREATED
+  type      String // ActivityType: WHATSAPP_CONTACT | STATUS_CHANGE | ASSIGNMENT | NOTE | CREATED | FOLLOW_UP
   detail    String
   createdAt DateTime @default(now())
 
@@ -72,4 +72,14 @@ model Activity {
   user User @relation(fields: [userId], references: [id])
 
   @@index([leadId])
+}
+
+// Team-added lead sources beyond the six built-ins (Blueprint §14.7).
+// Lead.source stores either a built-in code ("WEBSITE") or a custom name
+// ("Google Ads") — validity is enforced in the server actions against the
+// LeadSource union plus this table.
+model CustomSource {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  createdAt DateTime @default(now())
 }

@@ -18,6 +18,7 @@
 // feature set for a trained win-prediction model behind this same interface.
 
 import {
+  isLeadSource,
   type Authority,
   type BudgetStatus,
   type LeadSource,
@@ -31,7 +32,8 @@ export interface QualificationInput {
   budgetStatus: BudgetStatus;
   authority: Authority;
   timeline: Timeline;
-  source: LeadSource;
+  /** a built-in LeadSource code or a team-added custom source name */
+  source: string;
   dealValue: number; // RM
 }
 
@@ -72,6 +74,14 @@ const SOURCE_POINTS: Record<LeadSource, number> = {
   OTHER: 2,
 };
 
+/**
+ * Custom (team-added) sources score a neutral 5 until the win/loss report
+ * proves the channel one way or the other — then the weight gets tuned here.
+ */
+export function sourcePoints(source: string): number {
+  return isLeadSource(source) ? SOURCE_POINTS[source] : 5;
+}
+
 export function dealValuePoints(valueRM: number): number {
   if (valueRM >= 100_000) return 10;
   if (valueRM >= 50_000) return 8;
@@ -87,7 +97,7 @@ export function qualificationParts(input: QualificationInput): ScorePart[] {
     { label: "Budget", points: BUDGET_POINTS[input.budgetStatus], max: 30 },
     { label: "Authority", points: AUTHORITY_POINTS[input.authority], max: 25 },
     { label: "Timeline", points: TIMELINE_POINTS[input.timeline], max: 25 },
-    { label: "Source", points: SOURCE_POINTS[input.source], max: 10 },
+    { label: "Source", points: sourcePoints(input.source), max: 10 },
     { label: "Deal size", points: dealValuePoints(input.dealValue), max: 10 },
   ];
 }

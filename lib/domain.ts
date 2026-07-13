@@ -95,6 +95,14 @@ export function isLeadSource(v: string): v is LeadSource {
   return (LEAD_SOURCES as readonly string[]).includes(v);
 }
 
+/**
+ * Display name for any source value: built-in codes map through SOURCE_LABELS,
+ * custom sources (stored as their display name, e.g. "Google Ads") pass through.
+ */
+export function sourceLabel(v: string): string {
+  return isLeadSource(v) ? SOURCE_LABELS[v] : v;
+}
+
 export function isBudgetStatus(v: string): v is BudgetStatus {
   return (BUDGET_STATUSES as readonly string[]).includes(v);
 }

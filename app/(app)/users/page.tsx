@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { ROLES, ROLE_LABELS, type Role } from "@/lib/domain";
 import { relativeTime } from "@/lib/format";
@@ -11,7 +11,7 @@ import { setUserRole, toggleUserActive } from "./actions";
 // Admin-only (Blueprint §3): create users, set roles, deactivate/reactivate.
 // No hard delete — deactivation preserves the audit trail (Blueprint §9).
 export default async function UsersPage() {
-  const user = (await getCurrentUser())!;
+  const user = await requireUser();
   if (user.role !== "ADMIN") redirect("/dashboard");
 
   const users = await prisma.user.findMany({

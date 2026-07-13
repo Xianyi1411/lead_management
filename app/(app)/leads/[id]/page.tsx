@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
 import {
@@ -9,11 +9,11 @@ import {
   AUTHORITY_LABELS,
   TIMELINE_LABELS,
   LOST_REASON_LABELS,
+  sourceLabel,
   isBudgetStatus,
   isAuthority,
   isTimeline,
   isLostReason,
-  isLeadSource,
   type ActivityType,
   type LeadStatus,
 } from "@/lib/domain";
@@ -40,7 +40,7 @@ const ACTIVITY_COLOR: Record<ActivityType, string> = {
 };
 
 export default async function LeadDetailPage({ params }: { params: { id: string } }) {
-  const user = (await getCurrentUser())!;
+  const user = await requireUser();
 
   const lead = await prisma.lead.findUnique({
     where: { id: params.id },
@@ -75,20 +75,27 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
     if (hit) priorStatus = hit[0] as LeadStatus;
   }
 
-  const reps = canAssign
-    ? await prisma.user.findMany({
-        where: { role: "SALES_REP", isActive: true },
-        select: { id: true, name: true },
-        orderBy: { name: "asc" },
-      })
-    : [];
+  const [reps, customSources] = await Promise.all([
+    canAssign
+      ? prisma.user.findMany({
+          where: { role: "SALES_REP", isActive: true },
+          select: { id: true, name: true },
+          orderBy: { name: "asc" },
+        })
+      : Promise.resolve([]),
+    canEdit
+      ? prisma.customSource
+          .findMany({ select: { name: true }, orderBy: { name: "asc" } })
+          .then((rows) => rows.map((r) => r.name))
+      : Promise.resolve([] as string[]),
+  ]);
 
   // Fit score from the stored qualification facts (same rule as the intake gate).
   const fit = qualificationScore({
     budgetStatus: isBudgetStatus(lead.budgetStatus) ? lead.budgetStatus : "UNKNOWN",
     authority: isAuthority(lead.authority) ? lead.authority : "UNKNOWN",
     timeline: isTimeline(lead.timeline) ? lead.timeline : "UNKNOWN",
-    source: isLeadSource(lead.source) ? lead.source : "OTHER",
+    source: lead.source,
     dealValue: lead.dealValue,
   });
   const fitVerdict = VERDICT_LABELS[qualificationVerdict(fit)];
@@ -128,6 +135,7 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                   authority: lead.authority,
                   timeline: lead.timeline,
                 }}
+                customSources={customSources}
               />
             </div>
           )}
@@ -146,7 +154,7 @@ export default async function LeadDetailPage({ params }: { params: { id: string 
                 <dt>Company</dt>
                 <dd>{lead.company ?? "—"}</dd>
                 <dt>Source</dt>
-                <dd>{lead.source.charAt(0) + lead.source.slice(1).toLowerCase().replace("_", " ")}</dd>
+                <dd>{sourceLabel(lead.source)}</dd>
                 <dt>Deal value</dt>
                 <dd className="tnum">{formatRM(lead.dealValue)}</dd>
                 <dt>Fit score</dt>

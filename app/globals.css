@@ -442,6 +442,16 @@ dialog.modal::backdrop { background: rgba(23, 25, 34, 0.45); animation: backdrop
 .gate-meter i { display: block; height: 100%; border-radius: 99px; transition: width 0.35s cubic-bezier(0.22, 1, 0.36, 1), background-color 0.35s ease; }
 .gate-note { font-size: 12px; color: var(--slate); margin-top: 8px; line-height: 1.45; }
 
+/* add-a-new-source (SourceField in the lead dialogs) */
+.addsrc-toggle { display: inline-block; margin-top: 6px; padding: 0; border: none; background: none;
+  font-size: 12px; font-weight: 500; color: var(--iris); cursor: pointer; }
+.addsrc-toggle:hover { text-decoration: underline; }
+.addsrc { display: flex; gap: 8px; margin-top: 8px; }
+.addsrc input { flex: 1; min-width: 0; height: 36px; border: 1px solid var(--mist); border-radius: var(--r-sm);
+  padding: 0 12px; font-size: 13.5px; font-family: var(--ui); color: var(--ink); background: var(--surface); }
+.addsrc input::placeholder { color: #9096a5; }
+.addsrc input:focus { outline: none; border-color: var(--iris); box-shadow: 0 0 0 3px var(--iris-ring); }
+
 /* lost-reason step (Advance status card) */
 .lost-why { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--mist-2); }
 .tpl.on-lost { border-color: var(--lost); background: var(--lost-t); color: #b23a34; font-weight: 600; }

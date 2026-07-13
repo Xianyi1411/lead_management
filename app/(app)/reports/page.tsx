@@ -1,16 +1,14 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { getCurrentUser } from "@/lib/auth";
+import { requireUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { can } from "@/lib/permissions";
 import {
   ACTIVE_STATUSES,
-  LEAD_SOURCES,
   LOST_REASONS,
   LOST_REASON_LABELS,
-  SOURCE_LABELS,
+  sourceLabel,
   isLostReason,
-  type LeadSource,
 } from "@/lib/domain";
 import { avgSalesCycleDays, reachedAt } from "@/lib/velocity";
 import { formatNumber } from "@/lib/format";
@@ -27,7 +25,7 @@ const MONTH_FMT = new Intl.DateTimeFormat("en-MY", { month: "short" });
 // and how the months are trending. Everything is derived from the leads table
 // and the activity audit trail — no extra tracking, no external tools.
 export default async function ReportsPage() {
-  const user = (await getCurrentUser())!;
+  const user = await requireUser();
   if (!can(user, "view_reports")) redirect("/dashboard");
 
   const [leads, reps] = await Promise.all([
@@ -124,13 +122,13 @@ export default async function ReportsPage() {
   lostByReason.sort((a, b) => b.count - a.count);
   const maxLost = Math.max(1, ...lostByReason.map((x) => x.count));
 
-  // ---- where won value comes from ----
-  const sourceValue = (LEAD_SOURCES as readonly LeadSource[])
+  // ---- where won value comes from (built-in and custom sources alike) ----
+  const wonSources = Array.from(new Set(won.map((l) => l.source)));
+  const sourceValue = wonSources
     .map((s) => {
       const wins = won.filter((l) => l.source === s);
       return { source: s, count: wins.length, value: wins.reduce((sum, l) => sum + Number(l.dealValue), 0) };
     })
-    .filter((x) => x.count > 0)
     .sort((a, b) => b.value - a.value);
   const maxSourceValue = Math.max(1, ...sourceValue.map((x) => x.value));
 
@@ -266,7 +264,7 @@ export default async function ReportsPage() {
               ) : (
                 sourceValue.map((x) => (
                   <div className="srcrow src-wide" key={x.source}>
-                    <div className="name">{SOURCE_LABELS[x.source]}</div>
+                    <div className="name">{sourceLabel(x.source)}</div>
                     <div className="track">
                       <i style={{ width: `${(x.value / maxSourceValue) * 100}%`, background: "var(--won)", opacity: 0.55 }} />
                     </div>

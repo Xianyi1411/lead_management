@@ -3,8 +3,7 @@
 import { useRef, useState } from "react";
 import { useFormState, useFormStatus } from "react-dom";
 import { createLead, type ActionResult } from "@/app/(app)/leads/actions";
-import { LEAD_SOURCES, SOURCE_LABELS } from "@/lib/domain";
-import Dropdown from "./Dropdown";
+import SourceField from "./SourceField";
 import QualificationIntake from "./QualificationIntake";
 
 function SubmitButton() {
@@ -19,7 +18,7 @@ function SubmitButton() {
 // "New lead" button + centered dialog. On success createLead redirects to the new
 // lead's page, so the dialog disappears with the navigation. Escape and backdrop
 // clicks close it natively.
-export default function AddLeadDialog() {
+export default function AddLeadDialog({ customSources = [] }: { customSources?: string[] }) {
   const ref = useRef<HTMLDialogElement>(null);
   const [state, formAction] = useFormState<ActionResult, FormData>(createLead, {});
   // Source and deal value are lifted so the qualification gate can score live.
@@ -71,12 +70,11 @@ export default function AddLeadDialog() {
             </div>
             <div className="field">
               <label htmlFor="nl-source">Source</label>
-              <Dropdown
+              <SourceField
                 id="nl-source"
-                name="source"
                 defaultValue="WEBSITE"
+                customSources={customSources}
                 onChange={setSource}
-                options={LEAD_SOURCES.map((s) => ({ value: s, label: SOURCE_LABELS[s] }))}
               />
             </div>
             <div className="field">

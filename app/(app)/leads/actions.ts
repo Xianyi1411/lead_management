@@ -13,7 +13,9 @@ import { canTransition, isTerminal, reopenTarget } from "@/lib/transitions";
 import {
   STATUS_LABELS,
   SOURCE_LABELS,
+  LEAD_SOURCES,
   LOST_REASON_LABELS,
+  sourceLabel,
   isLeadStatus,
   isLeadSource,
   isBudgetStatus,
@@ -33,6 +35,13 @@ function revalidateLead(leadId: string) {
   revalidatePath("/dashboard");
   revalidatePath("/leads");
   revalidatePath(`/leads/${leadId}`);
+}
+
+/** A valid source is a built-in code or a name registered in CustomSource. */
+async function isValidSource(source: string): Promise<boolean> {
+  if (isLeadSource(source)) return true;
+  const custom = await prisma.customSource.findUnique({ where: { name: source } });
+  return custom !== null;
 }
 
 /** Prior active status of a Lost lead, parsed from its last "X → Lost" activity. */
@@ -67,7 +76,7 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
 
   if (!name) return { error: "Enter the lead's name." };
   if (phone.replace(/\D/g, "").length < 8) return { error: "Enter a valid phone number." };
-  if (!isLeadSource(source)) return { error: "Pick a source from the list." };
+  if (!(await isValidSource(source))) return { error: "Pick a source from the list." };
   if (!Number.isFinite(dealValue) || dealValue < 0) return { error: "Deal value must be 0 or more." };
   if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timeline)) {
     return { error: "Pick the qualification answers from the lists." };
@@ -100,7 +109,7 @@ export async function createLead(_prev: ActionResult, formData: FormData): Promi
       leadId: lead.id,
       userId: user.id,
       type: "CREATED",
-      detail: `Lead created · source ${SOURCE_LABELS[source]} · fit ${fit}/100 (${verdict})`,
+      detail: `Lead created · source ${sourceLabel(source)} · fit ${fit}/100 (${verdict})`,
     },
   });
 
@@ -137,7 +146,7 @@ export async function updateLead(
 
   if (!name) return { error: "Enter the lead's name." };
   if (phone.replace(/\D/g, "").length < 8) return { error: "Enter a valid phone number." };
-  if (!isLeadSource(source)) return { error: "Pick a source from the list." };
+  if (!(await isValidSource(source))) return { error: "Pick a source from the list." };
   if (!Number.isFinite(dealValue) || dealValue < 0) return { error: "Deal value must be 0 or more." };
   if (!isBudgetStatus(budgetStatus) || !isAuthority(authority) || !isTimeline(timeline)) {
     return { error: "Pick the qualification answers from the lists." };
@@ -350,6 +359,40 @@ export async function logWhatsAppContact(leadId: string, templateKey: string): P
 
   revalidateLead(leadId);
   return {};
+}
+
+// ---------------------------------------------------------------------------
+// Custom sources — the team can extend the source list beyond the built-ins.
+// Values are registered (not free text on the lead) so analytics stay grouped.
+// ---------------------------------------------------------------------------
+export async function addCustomSource(
+  rawName: string
+): Promise<ActionResult & { name?: string }> {
+  const user = await getCurrentUser();
+  if (!user) return { error: "Your session expired. Sign in again." };
+  if (!can(user, "create_lead")) return { error: "You don't have permission to add sources." };
+
+  const name = rawName.trim().replace(/\s+/g, " ");
+  if (name.length < 2) return { error: "Source names need at least 2 characters." };
+  if (name.length > 30) return { error: "Keep source names under 30 characters." };
+
+  // Don't duplicate a built-in under a different casing ("website", "walk in"…).
+  const normalized = name.toLowerCase().replace(/[\s_-]+/g, "");
+  const builtIn = LEAD_SOURCES.find(
+    (s) =>
+      s.toLowerCase().replace(/[\s_-]+/g, "") === normalized ||
+      SOURCE_LABELS[s].toLowerCase().replace(/[\s_-]+/g, "") === normalized
+  );
+  if (builtIn) return { name: builtIn }; // it already exists — just select it
+
+  // Case-insensitive match against existing custom sources (tiny table).
+  const existing = await prisma.customSource.findMany({ select: { name: true } });
+  const hit = existing.find((s) => s.name.toLowerCase() === name.toLowerCase());
+  if (hit) return { name: hit.name };
+
+  await prisma.customSource.create({ data: { name } });
+  revalidatePath("/leads");
+  return { name };
 }
 
 // ---------------------------------------------------------------------------
