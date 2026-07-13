@@ -364,9 +364,12 @@ error states for each surface.
   the user is never asked the same fact twice.
 - **Templates page** (Manager/Admin). The leads-table pattern: label, body
   (muted, max-width), role tags (neutral pills), relative updated time, and
-  compact row actions (Edit dialog + two-step Delete in Lost rose). Role
-  selection in the dialog uses checkbox chips that light iris when ticked —
-  same active grammar as the filter bar.
+  quiet text-level row actions (`.rowlink`: iris Edit, rose two-step Delete) —
+  rows never carry full buttons. "Available to" in the dialog is a **segmented
+  multi-select**: one connected control, three segments (Admin · Manager ·
+  Sales Rep); selected segments fill solid iris with a check glyph, off
+  segments stay quiet surface. A helper line under it states the consequence
+  ("only ticked roles see this template") and warns when nothing is ticked.
 - **Lost-reason step** (Advance status card). "Mark Lost" now reveals a chip row
   (the WhatsApp template-chip pattern; selected chip goes Lost rose) + Confirm/Cancel.
   Confirm stays disabled until a reason is picked.

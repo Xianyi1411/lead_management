@@ -112,7 +112,9 @@ export default function TemplateDialog({ template }: { template?: EditableTempla
 
           <div className="field">
             <label id={`tpl-${idp}-roles-lbl`}>Available to</label>
-            <div className="role-checks" role="group" aria-labelledby={`tpl-${idp}-roles-lbl`}>
+            {/* Segmented multi-select: one connected control, selected segments
+                fill iris. Tap to toggle each role on or off. */}
+            <div className="seg-select" role="group" aria-labelledby={`tpl-${idp}-roles-lbl`}>
               {ROLES.map((role) => {
                 const on = roles.includes(role);
                 return (
@@ -121,20 +123,23 @@ export default function TemplateDialog({ template }: { template?: EditableTempla
                     type="button"
                     role="checkbox"
                     aria-checked={on}
-                    className={`role-check${on ? " on" : ""}`}
+                    className={`seg-opt${on ? " on" : ""}`}
                     onClick={() => toggleRole(role)}
                   >
-                    <span className="role-check-box" aria-hidden="true">
-                      {on && (
-                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.2}>
-                          <path d="M20 6 9 17l-5-5" />
-                        </svg>
-                      )}
-                    </span>
+                    {on && (
+                      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3} aria-hidden="true">
+                        <path d="M20 6 9 17l-5-5" />
+                      </svg>
+                    )}
                     {ROLE_LABELS[role]}
                   </button>
                 );
               })}
+            </div>
+            <div className="tpl-hint">
+              {roles.length === 0
+                ? "Pick at least one role — nobody can send this template right now."
+                : "Tap a role to toggle it. Only ticked roles see this template in the WhatsApp panel."}
             </div>
             <input type="hidden" name="roles" value={roles.join(",")} readOnly />
           </div>
