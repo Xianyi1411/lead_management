@@ -11,4 +11,10 @@ Built for the AI Lead Management Challenge with a 4-day deadline and a live 15-m
 ## Consequences
 
 - Local dev environment doubles as the demo backup; keep seed data resettable.
-- Prisma schema is the single source of truth for the ERD deliverable.
+- Prisma schema is the single source of truth for the ERD deliverable. Two
+  schemas actually exist — `prisma/schema.prisma` (SQLite for dev) and
+  `prisma/schema.postgres.prisma` (Postgres for prod); they must stay
+  model-identical. As of Phase 2 (Blueprint §14), the schemas cover five tables:
+  `User`, `Lead` (with qualification, exact-figure, follow-up, and lost-reason
+  columns), `Activity`, `CustomSource` (team-added sources §14.7), and
+  `MessageTemplate` (role-scoped WhatsApp templates §14.9).

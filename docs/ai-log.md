@@ -194,3 +194,65 @@ and what a human decided/verified.
   Manager-only "Discount approval" template so the role gate demos visibly.
   10 new unit tests (64 total) across scoring maths and template role/
   placeholder parsing.
+
+## 13 · Template dialog polish + 14-template demo library
+
+- **Prompt:** "refine the button in add template page, too ugly, and can u
+  generate 10++ template for my demo purpose".
+- **Outcome:** the naked-checkbox-in-a-pill role toggles became proper chip
+  checkboxes (bordered box that fills iris when ticked, aria-checked buttons,
+  same active grammar as the filter chips); the shrunken row-level Edit/Delete
+  ghost buttons became quiet `.rowlink` text actions (iris Edit, rose two-step
+  Delete + Keep), so rows never compete with the primary "New template"
+  button. Seeded a 14-template library covering the whole lead lifecycle
+  (intro, follow-up, proposal follow-up, meeting request, quotation sent, demo
+  invitation, reconnect, event, welcome aboard, renewal, referral ask, plus
+  three management-only: price discussion, discount approval, payment
+  reminder). A follow-up correction — "available to button" — turned the three
+  loose chips into a single connected segmented multi-select (Admin · Manager
+  · Sales Rep) with iris-filled selected segments and a consequence-stating
+  helper line under it.
+
+## 14 · Three architecture slides for the pitch deck
+
+- **Prompt:** "can u create the database erd. For system architecture and
+  project structure into the pptx slide" — then, after review, "this system
+  architecture slides, too complicated and is not suitable to present to
+  non-coding people".
+- **Outcome:** `scripts/build-architecture-slides.cjs` uses pptxgenjs (matches
+  the existing deck: widescreen 16:9, tokens extracted by unzipping the
+  main pptx). Slide 1 (ERD) shows all five tables with column types, PK/FK
+  badges, and iris dots on Phase-2 fields, plus five relationship arrows.
+  Slide 2 (originally a four-column technical diagram with lib/ filenames and
+  the verification lap) was fully reworked into a plain-language story:
+  three actors → one big centre panel of what the app does in business terms
+  → two output cards (safe records, WhatsApp in one tap) → three benefit
+  cards at the bottom. Zero jargon in the reworked version. Slide 3 shows the
+  repo tree with Phase-2 additions highlighted iris-soft plus three principle
+  cards (pure lib modules, server-action mutations, audit trail as analytics
+  source). Output: `presentation/XeersLead-architecture-slides.pptx`, ready
+  to Insert → Reuse Slides into the main deck.
+
+## 15 · Docs audit and refresh
+
+- **Prompt:** "can u update all the markdown that is outdated, and also make
+  sure is balanced between for coding purpose in calude code and developer
+  read".
+- **Outcome:** every repo markdown updated to reflect current state after 8
+  Phase-2 commits. README refreshed (28 → 64 tests, 9 → 10 routes, Phase 2
+  feature list, five `lib/` modules called out, all three ADRs referenced).
+  HANDOFF rewritten for a next Claude Code session: what shipped in §14 (all
+  9 items), current commit tail, the open items (push, Neon password
+  rotation, XeersLead rebrand check, slide merge), tightened environment
+  gotchas (folder is `lead_management` with underscore; PowerShell
+  double-quote trap; browser pane can die at 0×0; `requireUser()` is the
+  correct page-level guard, not `getCurrentUser()!`). BLUEPRINT's §4
+  checklist ticked, §5 architecture updated ("Server Actions" not "API route
+  handlers"), §8 project structure rewritten around the route groups and the
+  five `lib/` modules, §9 unit-testing paragraph updated (five modules, 64
+  tests). ADR-0001 notes both schemas + Phase-2 tables; ADR-0002 notes
+  editable templates but the intent-vs-delivery position is unchanged;
+  docs/deploy.md fixed the "Lead Management" (with space) folder path and
+  added a schema-drift + rename-Neon-password troubleshooting note. Balance
+  target: each doc reads well to a fresh Claude Code session (current facts,
+  gotchas, verification lap) and to a human developer (what/why/how-to-run).

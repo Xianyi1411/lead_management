@@ -5,9 +5,15 @@ the file-based SQLite database — that's the offline fallback if conference Wi-
 fails (Blueprint §9), so nothing below touches your local setup.
 
 **How the two databases coexist:** two Prisma schemas with identical models —
-`prisma/schema.prisma` (SQLite, dev) and `prisma/schema.postgres.prisma` (Postgres,
-prod). Vercel's build runs the `vercel-build` script, which generates the Postgres
-client, pushes the schema to Neon, and builds Next.js. Locally nothing changes.
+`prisma/schema.prisma` (SQLite, dev) and `prisma/schema.postgres.prisma`
+(Postgres, prod). Vercel's build runs the `vercel-build` script, which generates
+the Postgres client, pushes the schema to Neon, and builds Next.js. Locally
+nothing changes.
+
+**When you add new columns or tables** (as Phase 2 did), keep both schema files
+in sync — any schema drift breaks `vercel-build`. Verify locally with
+`npx prisma db push` (SQLite dev) before pushing; Vercel will run the Postgres
+equivalent on deploy.
 
 ## Prerequisites
 
@@ -20,7 +26,7 @@ The git repository is already initialized with an initial commit. Create an empt
 repo on GitHub (no README/license — keep it empty), then:
 
 ```powershell
-cd "C:\Users\User\Desktop\Lead Management"
+cd "C:\Users\User\Desktop\lead_management"
 git remote add origin https://github.com/<your-username>/lead-management.git
 git push -u origin main
 ```
@@ -56,7 +62,7 @@ The deployed app has empty tables until you seed it. From your machine, point on
 command at Neon, then restore your local client:
 
 ```powershell
-cd "C:\Users\User\Desktop\Lead Management"
+cd "C:\Users\User\Desktop\lead_management"
 $env:DATABASE_URL = "<the Neon URL>"
 npm run db:prod:seed
 Remove-Item Env:\DATABASE_URL
@@ -91,3 +97,8 @@ panel and status stepper.
   regenerated for Postgres. Run `npx prisma generate` to restore the SQLite client.
 - **Rotating secrets:** change `SESSION_SECRET` in Vercel → redeploy. Everyone is
   signed out (sessions are invalidated) — that's the point.
+- **Rotating the Neon password:** Neon → Settings → Reset password → paste the
+  new URL into Vercel `DATABASE_URL` env var → redeploy. Then also update your
+  local `.env` if you keep a Neon URL there.
+- **`prisma generate` fails with `EPERM` on Windows:** the dev server is holding
+  the query-engine DLL. Stop `next dev` and rerun.

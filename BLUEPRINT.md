@@ -68,16 +68,18 @@ assign (assignment is a management decision).
 
 ---
 
-## 4. Required features (the 30-mark checklist)
+## 4. Required features (the 30-mark checklist) — **all shipped**
 
-- [ ] **User login & role management** — login page; Admin-only Users page to create/deactivate users and set roles. No public sign-up.
-- [ ] **Lead CRUD** — add / edit / delete / view, gated by the permission matrix.
-- [ ] **Lead assignment** — Manager/Admin assign a lead to one Sales Rep.
-- [ ] **Lead status tracking** — the 6-stage funnel with enforced transitions (Section 9).
-- [ ] **Dashboard** — role-scoped KPI cards, funnel chart, source breakdown, recent-activity feed.
-- [ ] **Search & filter** — text search on name/phone/company; filters by status, source, assigned rep.
-- [ ] **Contact via WhatsApp** — pick a template, edit preview, open `wa.me`, log the activity (see ADR-0002).
-- [ ] **Activity log** — full per-lead timeline: WhatsApp contacts, status changes, assignments, notes, creation.
+- [x] **User login & role management** — login page; Admin-only Users page to create/deactivate users and set roles. No public sign-up.
+- [x] **Lead CRUD** — add / edit / delete / view, gated by the permission matrix.
+- [x] **Lead assignment** — Manager/Admin assign a lead to one Sales Rep.
+- [x] **Lead status tracking** — the 6-stage funnel with enforced transitions (Section 9).
+- [x] **Dashboard** — role-scoped KPI cards, funnel chart, source breakdown, recent-activity feed.
+- [x] **Search & filter** — text search on name/phone/company; filters by status, source, assigned rep.
+- [x] **Contact via WhatsApp** — pick a template, edit preview, open `wa.me`, log the activity (see ADR-0002).
+- [x] **Activity log** — full per-lead timeline: WhatsApp contacts, status changes, assignments, notes, creation.
+
+Phase 2 additions (§14, all shipped) are covered separately below.
 
 ---
 
@@ -87,10 +89,11 @@ assign (assignment is a management decision).
 Browser (React pages)
    │  HTTPS
    ▼
-Next.js on Vercel
+Next.js on Vercel (functions pinned to sin1, same region as Neon)
    ├─ Server Components / pages (app/)
-   ├─ API route handlers (app/api/*)  ── auth check + permission check
-   └─ lib/ business logic (transitions, permissions, whatsapp)
+   ├─ Server Actions (app/(app)/*/actions.ts)  ── auth check + permission check
+   │                                             + Activity row + revalidatePath
+   └─ lib/ business logic (pure, unit-tested modules — §8 tree)
    │  Prisma Client
    ▼
 PostgreSQL (Neon)  — Users, Leads, Activities
@@ -183,35 +186,46 @@ the lead detail page.
 ## 8. Folder / project structure
 
 ```
-lead-management/
+lead_management/
 ├── app/
-│   ├── login/                 login page
-│   ├── dashboard/             role-scoped dashboard
-│   ├── leads/                 leads list (search + filters)
-│   │   └── [id]/              lead detail: info, status, WhatsApp, activity timeline
-│   ├── users/                 Admin-only user management
-│   └── api/
-│       ├── auth/              login / logout / session
-│       ├── leads/             CRUD + assign + status change
-│       ├── activities/        create note / list timeline
-│       └── users/             CRUD (Admin)
-├── lib/
-│   ├── auth.ts                session + password hashing
-│   ├── permissions.ts         can(user, action, lead?) — pure, unit-tested
-│   ├── transitions.ts         allowedTransitions + canTransition — pure, unit-tested
-│   └── whatsapp.ts            buildWaLink + fillTemplate — pure, unit-tested
+│   ├── login/                 login page (public) + login action
+│   └── (app)/                 auth-required shell (Rail + Topbar + layout guard)
+│       ├── dashboard/         role-scoped: KPIs, spectrum, velocity, needs-attention
+│       ├── leads/             list + Focus filter
+│       │   ├── [id]/          detail: info · qualification · funnel · WhatsApp · timeline
+│       │   └── actions.ts     server actions (mutations re-check server-side)
+│       ├── reports/           Manager/Admin analytics (§14.6)
+│       ├── templates/         Manager/Admin WhatsApp templates (§14.9)
+│       └── users/             Admin-only user management
+├── lib/                       pure, unit-tested business modules — never import
+│   ├── auth.ts                session + password hashing + requireUser guard
+│   ├── permissions.ts         can(user, action, lead?)
+│   ├── transitions.ts         allowedTransitions + canTransition + reopenTarget
+│   ├── whatsapp.ts            phone normalise · wa.me link · template roles
+│   ├── scoring.ts             fit score + temperature (§14.2, ADR-0003)
+│   ├── velocity.ts            time-in-stage · conversion · sales cycle (§14.5)
+│   ├── domain.ts              enums + labels + type guards
+│   └── status-ui.ts           stage colour spectrum + temperature spectrum
 ├── prisma/
-│   ├── schema.prisma          single source of truth for the ERD
-│   └── seed.ts                demo users + sample leads + activities
+│   ├── schema.prisma          SQLite (dev) — source of truth for the ERD
+│   ├── schema.postgres.prisma Postgres (prod) — model-identical to the above
+│   └── seed.ts                demo users · leads · custom source · 14 templates
 ├── tests/
 │   ├── transitions.test.ts
 │   ├── permissions.test.ts
-│   └── whatsapp.test.ts
+│   ├── whatsapp.test.ts
+│   ├── scoring.test.ts        (§14.2)
+│   └── velocity.test.ts       (§14.5)
 ├── docs/
-│   ├── adr/                   0001, 0002 (+ future)
-│   ├── ai-log.md              key AI prompts & outcomes (fill in as you build)
-│   └── user-manual.md         generated from the glossary
+│   ├── adr/                   0001, 0002, 0003 (+ future)
+│   ├── ai-log.md              key AI prompts & outcomes (numbered; newest last)
+│   ├── deploy.md              Vercel + Neon runbook
+│   └── user-manual.md         per-role how-to (covers §4 core + §14 Phase 2)
+├── components/                React components (dialogs, panels, controls)
+├── presentation/              pitch deck (main + architecture supplement)
+├── scripts/                   build-time helpers (e.g. deck generator)
 ├── CONTEXT.md                 domain glossary
+├── HANDOFF.md                 next-session pickup notes
 └── BLUEPRINT.md               this file
 ```
 
@@ -219,7 +233,7 @@ lead-management/
 
 ## 9. Software quality
 
-### Business logic (the two testable modules)
+### Business logic (five pure, unit-tested modules)
 
 **Status transition rule** (`lib/transitions.ts`):
 
@@ -242,21 +256,38 @@ is rejected.
 **WhatsApp link builder** (`lib/whatsapp.ts`): `buildWaLink(phone, message)`
 normalises the phone (strip spaces/`+`, country code) and returns
 `https://wa.me/<phone>?text=<encoded>`; `fillTemplate(template, {leadName,
-company, repName})` substitutes placeholders.
+company, repName})` substitutes placeholders; `parseTemplateRoles` +
+`templateAllowedFor` enforce the §14.9 per-role gate; `invalidPlaceholders`
+rejects unknown `{tokens}` at template save time.
+
+**Fit scoring** (`lib/scoring.ts`, §14.2, ADR-0003): `qualificationScore` sums
+weighted points from budget (0–30, adjusted by `budgetAmount` coverage),
+authority (0–25), timeline (0–25, date-derived when `expectedCloseAt` is set
+via `timelineFromDate`), source (0–10), deal size (0–10); `qualificationVerdict`
+maps 0–100 → Nurture / Review / Qualify. `temperatureScore` combines fit +
+funnel depth − inactivity − overdue-follow-up penalty for the Hot/Warm/Cold
+work-priority signal.
+
+**Velocity analytics** (`lib/velocity.ts`, §14.5): reconstructs each lead's
+stage history from STATUS_CHANGE Activity rows (`parseTransition`,
+`stageHistory`), then derives `avgDaysInStage`, `stageConversion`, and
+`avgSalesCycleDays`. No extra tracking — the audit trail is the source.
 
 ### Risk management (talking points)
 
 - **WhatsApp logs intent, not delivery** (ADR-0002) — mitigation: upgrade path to the WhatsApp Business API for delivery receipts.
 - **No hard delete of history** — deletion is restricted; the activity log preserves the audit trail.
-- **Role-based access enforced server-side** in every API route, not just hidden in the UI.
+- **Role-based access enforced server-side** in every server action, not just hidden in the UI. Page-level auth uses `requireUser()` (`lib/auth.ts`) — App Router renders layout and page in parallel, so a stale session cookie will crash a page that assumes a non-null user; `requireUser()` redirects to `/login` instead.
 - **Secrets in environment variables** (DB URL, session secret) — never committed.
 - **Demo resilience** — deployed on Vercel with a local `npm run dev` fallback if conference Wi-Fi fails.
 
 ### Unit testing
 
-Vitest against the three pure modules above — transitions, permissions, and the
-wa.me builder. These are deterministic and fast, giving meaningful coverage of
-the core business rules without brittle UI tests.
+Vitest against the five pure modules above — transitions, permissions,
+whatsapp, scoring, velocity. **64 tests, ~500 ms**, deterministic and fast,
+giving meaningful coverage of the core business rules without brittle UI
+tests. If a rule changes, change the module + its test together (project
+convention).
 
 ### User manual
 
@@ -268,8 +299,10 @@ defined in CONTEXT.md.
 
 ## 10. WhatsApp message templates
 
-Two or three fixed templates, each with placeholders, shown in an editable
-preview before opening WhatsApp:
+The original spec (three fixed templates) is now the **built-in seed** for the
+editable, role-scoped `MessageTemplate` table (Blueprint §14.9). Manager/Admin
+manage them on `/templates`; each row declares which roles can send it. The
+three seeded built-ins are:
 
 - **Introduction:** `Hi {leadName}, this is {repName}. Thanks for your interest — I'd love to help {company} with … Are you free for a quick chat?`
 - **Follow-up:** `Hi {leadName}, following up on our earlier conversation. Do you have any questions I can help with?`
@@ -296,20 +329,26 @@ Cover: solution overview, system architecture, AI usage, live demo, lessons lear
 
 ---
 
-## 12. Suggested schedule (presentation Tuesday)
+## 12. Suggested schedule (historical, kept for provenance)
+
+The original four-day build plan; §4 core shipped inside it, §14 Phase 2 was
+added later.
 
 - **Day 1 (Sat):** scaffold Next.js + Prisma; schema + seed; auth + roles; lead CRUD.
 - **Day 2 (Sun):** assignment; transition rules; WhatsApp feature + activity log; server-side permissions everywhere.
 - **Day 3 (Mon):** dashboard + search/filter; UI polish; unit tests; deploy to Vercel; generate docs.
 - **Day 4 (Tue):** slides; rehearse the demo; verify the local fallback.
+- **Post-deploy:** the Phase 2 items in §14 landed in a second wave of work.
 
 ---
 
 ## 13. Seed data (for the demo)
 
-- **Users:** 1 Admin, 1 Manager, 2 Sales Reps (known passwords, documented in the user manual for the demo).
-- **Leads:** ~15 across all statuses and sources, some assigned, with varied deal values so the funnel chart and pipeline-value KPI look populated. Timelines are spread over ~10 weeks with day-scale gaps so the §14 analytics read as real history.
+- **Users:** 1 Admin, 1 Manager, 2 Sales Reps (known passwords, documented in the user manual).
+- **Leads:** 16 across every status and source, some assigned, with varied deal values, qualification facts, `budgetAmount`/`expectedCloseAt` where relevant, follow-up dates (some overdue for the needs-attention demo), and lost reasons. Timelines are spread over ~10 weeks with day-scale gaps so the §14 analytics (velocity, cycle, monthly outcomes, forecast) read as real history.
 - **Activities:** a few per lead so timelines aren't empty.
+- **Custom sources:** one team-added source (`Google Ads`) so the extensible-source flow (§14.7) demos populated.
+- **WhatsApp templates:** 14 covering the lifecycle (intro, follow-up, proposal follow-up, meeting request, quotation sent, demo invitation, reconnect, event, thank you, renewal, referral, price discussion, discount approval, payment reminder). The last three are Manager/Admin-only so the role gate demos visibly (§14.9).
 
 ---
 
