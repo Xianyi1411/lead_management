@@ -59,7 +59,7 @@ export default function TemplateDialog({ template }: { template?: EditableTempla
           New template
         </button>
       ) : (
-        <button type="button" className="btn btn-ghost" onClick={() => ref.current?.showModal()}>
+        <button type="button" className="rowlink" onClick={() => ref.current?.showModal()}>
           Edit
         </button>
       )}
@@ -111,18 +111,30 @@ export default function TemplateDialog({ template }: { template?: EditableTempla
           </div>
 
           <div className="field">
-            <label>Available to</label>
-            <div className="role-checks">
-              {ROLES.map((role) => (
-                <label key={role} className={`role-check${roles.includes(role) ? " on" : ""}`}>
-                  <input
-                    type="checkbox"
-                    checked={roles.includes(role)}
-                    onChange={() => toggleRole(role)}
-                  />
-                  {ROLE_LABELS[role]}
-                </label>
-              ))}
+            <label id={`tpl-${idp}-roles-lbl`}>Available to</label>
+            <div className="role-checks" role="group" aria-labelledby={`tpl-${idp}-roles-lbl`}>
+              {ROLES.map((role) => {
+                const on = roles.includes(role);
+                return (
+                  <button
+                    key={role}
+                    type="button"
+                    role="checkbox"
+                    aria-checked={on}
+                    className={`role-check${on ? " on" : ""}`}
+                    onClick={() => toggleRole(role)}
+                  >
+                    <span className="role-check-box" aria-hidden="true">
+                      {on && (
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.2}>
+                          <path d="M20 6 9 17l-5-5" />
+                        </svg>
+                      )}
+                    </span>
+                    {ROLE_LABELS[role]}
+                  </button>
+                );
+              })}
             </div>
             <input type="hidden" name="roles" value={roles.join(",")} readOnly />
           </div>

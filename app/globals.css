@@ -467,21 +467,35 @@ dialog.modal::backdrop { background: rgba(23, 25, 34, 0.45); animation: backdrop
 .tpl-hint { font-size: 11.5px; color: var(--slate); margin-top: 6px; }
 .tpl-hint code { font-family: var(--mono); font-size: 11px; background: var(--mist-2); padding: 1px 5px;
   border-radius: 4px; margin-right: 2px; }
+/* Role toggle chips: the WhatsApp-chip grammar with a real check affordance —
+   a bordered box that fills iris when ticked (never a naked native checkbox). */
 .role-checks { display: flex; gap: 8px; flex-wrap: wrap; }
-.role-check { display: inline-flex; align-items: center; gap: 7px; padding: 7px 12px; border: 1px solid var(--mist);
-  border-radius: 99px; font-size: 12.5px; font-weight: 500; color: var(--slate); cursor: pointer;
-  transition: border-color 0.15s, background-color 0.15s, color 0.15s; }
-.role-check input { accent-color: var(--iris); }
+.role-check { display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 13px 0 10px;
+  border: 1px solid var(--mist); border-radius: 99px; background: var(--surface);
+  font-size: 12.5px; font-weight: 500; font-family: var(--ui); color: var(--slate); cursor: pointer;
+  transition: border-color 0.18s ease, background-color 0.18s ease, color 0.18s ease, transform 0.06s ease; }
+.role-check:hover { border-color: #c3c8d4; color: var(--ink); }
+.role-check:active { transform: translateY(0.5px); }
 .role-check.on { border-color: var(--iris); background: var(--iris-soft); color: var(--iris); font-weight: 600; }
+.role-check-box { width: 15px; height: 15px; border-radius: 4.5px; border: 1.5px solid #c3c8d4;
+  background: var(--surface); display: grid; place-items: center; flex-shrink: 0;
+  transition: background-color 0.18s ease, border-color 0.18s ease; }
+.role-check-box svg { width: 9px; height: 9px; color: #fff; }
+.role-check.on .role-check-box { background: var(--iris); border-color: var(--iris); }
+
 .role-tags { display: flex; gap: 5px; flex-wrap: wrap; }
 .role-tag { padding: 2px 8px; border-radius: 99px; background: var(--mist-2); color: var(--slate);
   font-size: 11px; font-weight: 600; white-space: nowrap; }
 .tpl-body-cell { max-width: 420px; color: var(--slate); font-size: 13px; line-height: 1.45; }
-.row-actions { display: inline-flex; gap: 8px; align-items: center; }
-.row-actions .btn { height: 30px; padding: 0 11px; font-size: 12.5px; }
-.tpl-del { color: #b23a34; }
-.tpl-del.on { background: var(--lost-t); }
-.tpl-del-confirm { display: inline-flex; gap: 8px; }
+
+/* Quiet row-level text actions — table rows never carry full buttons. */
+.row-actions { display: inline-flex; gap: 12px; align-items: center; }
+.rowlink { border: none; background: none; padding: 2px 2px; font-size: 12.5px; font-weight: 500;
+  font-family: var(--ui); color: var(--iris); cursor: pointer; border-radius: 4px; }
+.rowlink:hover { text-decoration: underline; }
+.rowlink:disabled { opacity: 0.55; cursor: default; text-decoration: none; }
+.rowlink.danger { color: #b23a34; }
+.rowlink.strong { font-weight: 600; }
 
 /* ============================================================================
    Follow-up control + attention tags

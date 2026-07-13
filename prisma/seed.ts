@@ -31,22 +31,83 @@ async function main() {
   // One team-added source so the extensible-source flow demos populated
   await prisma.customSource.create({ data: { name: "Google Ads" } });
 
-  // WhatsApp templates (Blueprint §14.9): the three built-ins for everyone,
-  // plus one management-only template so the role gate demos visibly —
-  // a Rep sees three chips, a Manager sees four.
-  for (const t of Object.values(TEMPLATES)) {
-    await prisma.messageTemplate.create({
-      data: { label: t.label, body: t.body, roles: ALL_ROLES_CSV },
-    });
-  }
-  await prisma.messageTemplate.create({
-    data: {
+  // WhatsApp templates (Blueprint §14.9): the three tested built-ins plus a
+  // realistic library covering the whole lead lifecycle. A few are
+  // management-only so the role gate demos visibly — a Rep sees fewer chips
+  // than a Manager on the same lead.
+  const MGMT = "ADMIN,MANAGER";
+  const demoTemplates: { label: string; body: string; roles: string }[] = [
+    ...Object.values(TEMPLATES).map((t) => ({ label: t.label, body: t.body, roles: ALL_ROLES_CSV })),
+    {
+      label: "Meeting request",
+      body:
+        "Hi {leadName}, {repName} here. Could we set up a quick 20-minute call this week to understand {company}'s needs better? Just let me know a time that suits you.",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Quotation sent",
+      body:
+        "Hi {leadName}, I've just emailed the quotation for {company}. Happy to walk you through the numbers here on WhatsApp or on a quick call — whichever you prefer.",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Demo invitation",
+      body:
+        "Hi {leadName}, would your team at {company} like a short live demo? 30 minutes, no obligation — I'll tailor it to what you told me. When works for you?",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Reconnect",
+      body:
+        "Hi {leadName}, it's {repName} — it's been a while since we last spoke about {company}'s plans. Has anything changed on your side? Happy to pick things up whenever you're ready.",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Event invitation",
+      body:
+        "Hi {leadName}, we're hosting a short product showcase next week and I'd love to have {company} there. Shall I reserve two seats for your team?",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Thank you — welcome aboard",
+      body:
+        "Thank you {leadName}! We're excited to welcome {company} on board. I'll send the onboarding details shortly — and if you need anything at all, just message me here.",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Renewal check-in",
+      body:
+        "Hi {leadName}, {repName} here — {company}'s current arrangement with us is coming up for renewal soon. Shall I prepare updated pricing so you can review it early?",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Referral ask",
+      body:
+        "Hi {leadName}, so glad things are going well with {company}! If you know anyone else who could use our help, I'd really appreciate an introduction — happy to return the favour.",
+      roles: ALL_ROLES_CSV,
+    },
+    {
+      label: "Price discussion",
+      body:
+        "Hi {leadName}, I understand budget is a real consideration for {company}. I've spoken with management and we have some flexibility — can we go through the numbers together tomorrow?",
+      roles: MGMT,
+    },
+    {
       label: "Discount approval",
       body:
         "Hi {leadName}, good news — I've approved a special rate for {company}. I'd love to close this together: when are you free today?",
-      roles: "ADMIN,MANAGER",
+      roles: MGMT,
     },
-  });
+    {
+      label: "Payment reminder",
+      body:
+        "Hi {leadName}, a gentle reminder that the invoice for {company} is due this week. Do let me know if payment is already on the way — thank you!",
+      roles: MGMT,
+    },
+  ];
+  for (const t of demoTemplates) {
+    await prisma.messageTemplate.create({ data: t });
+  }
 
   const admin = await prisma.user.create({
     data: { name: "Aina Zahra", email: "aina@company.my", passwordHash, role: "ADMIN" },
